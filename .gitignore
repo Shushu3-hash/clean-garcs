@@ -6,5 +6,5 @@
 
 # Virtual environment
 .venv/
- 
+.env310/
  
