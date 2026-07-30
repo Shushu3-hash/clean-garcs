@@ -10,73 +10,39 @@
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="static/theme.css">
 <script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "surface-container-highest": "#96ece7",
-                        "error-container": "#fb5151",
-                        "primary-fixed-dim": "#8bdece",
-                        "tertiary-fixed": "#e9fe90",
-                        "inverse-on-surface": "#6da7a4",
-                        "on-tertiary-fixed-variant": "#5d6d0d",
-                        "tertiary": "#526200",
-                        "surface-container-high": "#a2f1ec",
-                        "surface": "#d4fffb",
-                        "tertiary-container": "#e9fe90",
-                        "tertiary-fixed-dim": "#dbef84",
-                        "on-secondary-fixed-variant": "#1c5385",
-                        "surface-variant": "#96ece7",
-                        "secondary-container": "#b3d4ff",
-                        "on-surface-variant": "#296462",
-                        "surface-container-low": "#bafdf9",
-                        "on-primary-fixed-variant": "#006357",
-                        "on-tertiary": "#e8fd90",
-                        "on-primary-fixed": "#00443b",
-                        "on-secondary-container": "#0c4a7b",
-                        "error-dim": "#9f0519",
-                        "on-secondary": "#edf3ff",
-                        "on-tertiary-container": "#526200",
-                        "secondary-fixed-dim": "#99c7ff",
-                        "background": "#d4fffb",
-                        "on-error": "#ffefee",
-                        "secondary-dim": "#1b5284",
-                        "on-background": "#003533",
-                        "tertiary-dim": "#475500",
-                        "outline": "#47807d",
-                        "surface-container-lowest": "#ffffff",
-                        "on-primary-container": "#00594e",
-                        "primary-container": "#99ecdb",
-                        "secondary-fixed": "#b3d4ff",
-                        "on-tertiary-fixed": "#424f00",
-                        "surface-container": "#adf5f1",
-                        "primary-fixed": "#99ecdb",
-                        "surface-tint": "#00675b",
-                        "surface-bright": "#d4fffb",
-                        "error": "#b31b25",
-                        "on-secondary-fixed": "#00365f",
-                        "primary": "#00675b",
-                        "surface-dim": "#88e4df",
-                        "on-surface": "#003533",
-                        "primary-dim": "#005a4f",
-                        "on-primary": "#c1fff1",
-                        "outline-variant": "#7db8b4",
-                        "secondary": "#2a5e91",
-                        "inverse-surface": "#001110",
-                        "inverse-primary": "#aafeec",
-                        "on-error-container": "#570008"
-                    },
-                    fontFamily: {
-                        "headline": ["Lexend"],
-                        "body": ["Plus Jakarta Sans"],
-                        "label": ["Plus Jakarta Sans"]
-                    },
-                    borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
-                },
-            },
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          primary: "var(--primary)",
+          "primary-dim": "var(--primary-dim)",
+          "primary-container": "var(--primary-container)",
+          secondary: "var(--secondary)",
+          "secondary-container": "var(--secondary-container)",
+          tertiary: "var(--tertiary)",
+          "tertiary-container": "var(--tertiary-container)",
+          surface: "var(--surface)",
+          "surface-container": "var(--surface-container)",
+          "surface-container-low": "var(--surface-container-low)",
+          "surface-container-high": "var(--surface-container-high)",
+          "surface-container-highest": "var(--surface-container-highest)",
+          "surface-container-lowest": "var(--surface-container-lowest)",
+          "on-surface": "var(--on-surface)",
+          "on-surface-variant": "var(--on-surface-variant)",
+          outline: "var(--outline)",
+          "outline-variant": "var(--outline-variant)",
+          background: "var(--background)"
+        },
+        fontFamily: {
+          headline: ["var(--font-headline)"],
+          body: ["var(--font-body)"],
+          label: ["var(--font-label)"]
         }
-    </script>
+      }
+    }
+  }
+</script>
 
 
 </head>

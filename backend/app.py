@@ -2,10 +2,13 @@ from flask import Flask, request, jsonify, send_file
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from datetime import datetime
+from flask_bcrypt import Bcrypt
+
 import numpy as np
 import joblib
 import os
 import csv
+
 
 # =====================================
 # APP SETUP
