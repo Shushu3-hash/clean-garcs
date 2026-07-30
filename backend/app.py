@@ -9,6 +9,9 @@ import joblib
 import os
 import csv
 
+from mastery import SkillState, SKILLS, apply_response
+from sequencing import pick_next_question
+
 
 # =====================================
 # APP SETUP
@@ -24,30 +27,79 @@ CORS(app)
 # =====================================
 # DATABASE MODELS
 # =====================================
-class User(db.Model):
+# class User(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     name = db.Column(db.String(100))
+#     grade = db.Column(db.Integer)
+
+
+
+
+# class Attempt(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     user_id = db.Column(db.Integer)
+
+#     # ML FEATURES
+#     lit_acc = db.Column(db.Float)
+#     inf_acc = db.Column(db.Float)
+#     voc_acc = db.Column(db.Float)
+#     mid_acc = db.Column(db.Float)
+#     overall = db.Column(db.Float)
+#     time_f = db.Column(db.Float)
+#     diff = db.Column(db.Integer)
+
+#     # OUTPUTS
+#     lexile = db.Column(db.Integer)
+#     band = db.Column(db.Integer)
+
+#     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Student(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100))
     grade = db.Column(db.Integer)
+    email = db.Column(db.String(120), unique=True)
+    password_hash = db.Column(db.String(200))
 
+class Passage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200))
+    body = db.Column(db.Text)
+    grade_band = db.Column(db.Integer) # e.g. 5-7 vs 8-10
 
 class Question(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer)
+    passage_id = db.Column(db.Integer, db.ForeignKey('passage.id'))
+    prompt = db.Column(db.Text)
+    choices = db.Column(db.JSON) # ["A...", "B...", "C...", "D..."]
+    correct_index = db.Column(db.Integer)
+    skill_tag = db.Column(db.String(20)) # literal | inferential | critical
+    difficulty = db.Column(db.String(10)) # easy | medium | hard
 
-    # ML FEATURES
-    lit_acc = db.Column(db.Float)
-    inf_acc = db.Column(db.Float)
-    voc_acc = db.Column(db.Float)
-    mid_acc = db.Column(db.Float)
-    overall = db.Column(db.Float)
-    time_f = db.Column(db.Float)
-    diff = db.Column(db.Integer)
+class Response(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('student.id'))
+    question_id = db.Column(db.Integer, db.ForeignKey('question.id'))
+    skill_tag = db.Column(db.String(20))
+    difficulty = db.Column(db.String(10))
+    is_correct = db.Column(db.Boolean)
+    response_time_sec = db.Column(db.Float)
+    reread_count = db.Column(db.Integer, default=0)
+    mastery_before = db.Column(db.Float)
+    mastery_after = db.Column(db.Float)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # OUTPUTS
-    lexile = db.Column(db.Integer)
-    band = db.Column(db.Integer)
+class StudentSkillState(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(db.Integer, db.ForeignKey('student.id'))
+    skill_tag = db.Column(db.String(20))
+    mastery = db.Column(db.Float, default=0.50)
+    points = db.Column(db.Integer, default=0)
 
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+# Compatibility aliases for older route names
+User = Student
+Attempt = Response
 
 
 # =====================================
@@ -96,25 +148,37 @@ def progress():
 
 
 
+def _get_or_create_skill_state(student_id, skill_tag):
+    state_row = StudentSkillState.query.filter_by(student_id=student_id, skill_tag=skill_tag).first()
+    if state_row is None:
+        state_row = StudentSkillState(student_id=student_id, skill_tag=skill_tag, mastery=0.50, points=0)
+        db.session.add(state_row)
+        db.session.commit()
+
+    return state_row
+
+
 # =====================================
 # REGISTER USER
 # =====================================
 @app.route('/api/register', methods=['POST'])
 def register():
-    data = request.json
+    data = request.json or {}
 
     if not data.get("name") or not data.get("grade"):
         return jsonify({"error": "Missing name or grade"}), 400
 
-    user = User(
+    student = Student(
         name=data['name'],
-        grade=data['grade']
+        grade=data['grade'],
+        email=data.get('email') or f"student{datetime.utcnow().timestamp()}@garcs.local",
+        password_hash=""
     )
 
-    db.session.add(user)
+    db.session.add(student)
     db.session.commit()
 
-    return jsonify({"user_id": user.id})
+    return jsonify({"user_id": student.id, "student_id": student.id})
 
 
 # =====================================
@@ -132,6 +196,62 @@ def get_passage(grade):
 
     return jsonify({
         "difficulty": difficulty
+    })
+
+
+# =====================================
+# NEXT QUESTION (MASTERY + SEQUENCING)
+# =====================================
+@app.route('/api/next-question', methods=['POST'])
+@app.route('/api/next_question', methods=['POST'])
+def next_question():
+    data = request.json or {}
+    student_id = data.get('student_id')
+    answered_ids = data.get('answered_ids', [])
+
+    if not student_id:
+        return jsonify({"error": "Missing student_id"}), 400
+
+    states = {}
+    for skill_tag in SKILLS:
+        state_row = _get_or_create_skill_state(student_id, skill_tag)
+        states[skill_tag] = SkillState(
+            student_id=student_id,
+            skill_tag=skill_tag,
+            mastery=float(state_row.mastery or 0.50),
+            attempts=0,
+            correct_count=0,
+        )
+
+    def fetch_candidates(skill_tag, difficulty):
+        return Question.query.filter_by(skill_tag=skill_tag, difficulty=difficulty).all()
+
+    question, skill_tag, difficulty = pick_next_question(
+        states,
+        fetch_candidates,
+        answered_ids=answered_ids,
+        exploration_rate=data.get('exploration_rate', 0.15),
+    )
+
+    if question is None:
+        return jsonify({
+            "question": None,
+            "skill_tag": skill_tag,
+            "difficulty": difficulty,
+            "message": "No matching questions remain"
+        })
+
+    return jsonify({
+        "question": {
+            "id": question.id,
+            "prompt": question.prompt,
+            "choices": question.choices,
+            "skill_tag": question.skill_tag,
+            "difficulty": question.difficulty,
+        },
+        "skill_tag": skill_tag,
+        "difficulty": difficulty,
+        "mastery": round(states[skill_tag].mastery, 3),
     })
 
 
@@ -185,34 +305,56 @@ def predict():
 # =====================================
 @app.route('/api/submit', methods=['POST'])
 def submit():
-    data = request.json
+    data = request.json or {}
 
-    required_fields = [
-        'user_id','lit_acc','inf_acc','voc_acc',
-        'mid_acc','overall','time_f','diff','lexile','band'
-    ]
+    student_id = data.get('student_id') or data.get('user_id')
+    question_id = data.get('question_id')
+    if not student_id or question_id is None:
+        return jsonify({"error": "Missing student_id or question_id"}), 400
 
-    for field in required_fields:
-        if field not in data:
-            return jsonify({"error": f"Missing {field}"}), 400
+    question = Question.query.get(question_id)
+    if question is None:
+        return jsonify({"error": "Question not found"}), 404
 
-    attempt = Attempt(
-        user_id=data['user_id'],
-        lit_acc=data['lit_acc'],
-        inf_acc=data['inf_acc'],
-        voc_acc=data['voc_acc'],
-        mid_acc=data['mid_acc'],
-        overall=data['overall'],
-        time_f=data['time_f'],
-        diff=data['diff'],
-        lexile=data['lexile'],
-        band=data['band']
+    skill_tag = data.get('skill_tag', question.skill_tag)
+    difficulty = data.get('difficulty', question.difficulty)
+    is_correct = bool(data.get('is_correct', False))
+    response_time_sec = data.get('response_time_sec', 0.0)
+    reread_count = data.get('reread_count', 0)
+
+    state_row = _get_or_create_skill_state(student_id, skill_tag)
+    state = SkillState(
+        student_id=student_id,
+        skill_tag=skill_tag,
+        mastery=float(state_row.mastery or 0.50),
+        attempts=0,
+        correct_count=0,
     )
 
-    db.session.add(attempt)
+    mastery_before = apply_response(state, is_correct, difficulty)
+    state_row.mastery = state.mastery
+    state_row.points += int(is_correct)
+
+    response = Response(
+        student_id=student_id,
+        question_id=question_id,
+        skill_tag=skill_tag,
+        difficulty=difficulty,
+        is_correct=is_correct,
+        response_time_sec=response_time_sec,
+        reread_count=reread_count,
+        mastery_before=mastery_before,
+        mastery_after=state.mastery,
+    )
+
+    db.session.add(response)
     db.session.commit()
 
-    return jsonify({"message": "saved"})
+    return jsonify({
+        "message": "saved",
+        "mastery_before": round(mastery_before, 3),
+        "mastery_after": round(state.mastery, 3),
+    })
 
 
 # =====================================
@@ -220,31 +362,31 @@ def submit():
 # =====================================
 @app.route('/api/export', methods=['GET'])
 def export_csv():
-    attempts = Attempt.query.all()
+    responses = Response.query.all()
 
     with open("dataset.csv", "w", newline="") as f:
         writer = csv.writer(f)
 
         writer.writerow([
-            "lit_acc","inf_acc","voc_acc","mid_acc",
-            "overall","time_f","diff","label"
+            "student_id","question_id","skill_tag","difficulty",
+            "is_correct","response_time_sec","mastery_before","mastery_after"
         ])
 
-        for a in attempts:
+        for response in responses:
             writer.writerow([
-                a.lit_acc,
-                a.inf_acc,
-                a.voc_acc,
-                a.mid_acc,
-                a.overall,
-                a.time_f,
-                a.diff,
-                a.band
+                response.student_id,
+                response.question_id,
+                response.skill_tag,
+                response.difficulty,
+                int(response.is_correct or 0),
+                response.response_time_sec,
+                response.mastery_before,
+                response.mastery_after,
             ])
 
     return jsonify({
         "message": "dataset.csv generated",
-        "rows": len(attempts)
+        "rows": len(responses)
     })
 
 
@@ -253,14 +395,15 @@ def export_csv():
 # =====================================
 @app.route('/api/history/<int:user_id>', methods=['GET'])
 def history(user_id):
-    attempts = Attempt.query.filter_by(user_id=user_id).all()
+    responses = Response.query.filter_by(student_id=user_id).all()
 
     return jsonify([
         {
-            "lexile": a.lexile,
-            "band": a.band,
-            "date": a.created_at.strftime("%Y-%m-%d %H:%M")
-        } for a in attempts
+            "question_id": response.question_id,
+            "skill_tag": response.skill_tag,
+            "is_correct": response.is_correct,
+            "date": response.timestamp.strftime("%Y-%m-%d %H:%M")
+        } for response in responses
     ])
 
 
