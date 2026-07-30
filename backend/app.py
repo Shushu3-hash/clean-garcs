@@ -30,7 +30,7 @@ class User(db.Model):
     grade = db.Column(db.Integer)
 
 
-class Attempt(db.Model):
+class Question(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer)
 
