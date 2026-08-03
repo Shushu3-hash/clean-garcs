@@ -16,112 +16,50 @@
 // ============================================================
 // DATA — PASSAGES & QUESTIONS
 // ============================================================
-const passages = [
-  {
-    id:'easy', grades:[3,4,5], difficulty:0,
-    title:"Mia's Tide Pool Adventure",
-    genre:"Nature", genreEmoji:"🌊",
-    wordCount:165,
-    readMinutes:"3–4",
-    text:`Mia had never seen so many creatures in one small pool of water. Her grandmother knelt beside her on the rocky shore, pointing to a bright orange sea star clinging to the side of the pool.
+let passages = [];
 
-"You have to look carefully," Grandma said. "Tide pool creatures are experts at hiding."
+async function loadPassages() {
+  try {
+    const res = await fetch('/api/assessment/passages');
+    if (!res.ok) {
+      throw new Error('Unable to load passages');
+    }
 
-Mia leaned in closer. She could see a tiny hermit crab dragging its borrowed shell across the sandy bottom. A sea anemone waved its purple fingers gently in the water. When Mia's shadow fell over the pool, the anemone folded shut immediately.
-
-"Why did it do that?" Mia asked.
-
-"It thought your shadow was a predator," Grandma explained. "Anemones are sensitive to changes in light. It's how they protect themselves."
-
-Mia sat very still and watched. After a few moments, the anemone slowly opened again. A tiny fish darted between the rocks, and a cluster of mussels clung together in a tight group near the edge.
-
-"I never knew there was so much life down here," Mia said softly.
-
-Grandma smiled. "The ocean is full of surprises. You just have to know how to look."
-
-That evening, Mia filled three pages of her notebook with sketches and observations. She had decided to become a marine biologist.`,
-    questions:[
-      { type:'literal', q:"Where does the story take place?",
-        choices:["In an aquarium","At a rocky shore with tide pools","In Mia's backyard","At a science museum"], correct:1 },
-      { type:'literal', q:"Why did the sea anemone suddenly fold shut?",
-        choices:["It was sleeping","A predator bit it","Mia's shadow looked like a threat","The water turned cold"], correct:2 },
-      { type:'inferential', q:"What can you infer about Mia based on the ending of the story?",
-        choices:["She was disappointed by what she found","She became deeply curious about ocean life","She was afraid of the creatures","She wanted to catch the hermit crab"], correct:1 },
-      { type:'vocabulary', q:"In the passage, 'predator' most likely means:",
-        choices:["A large ocean wave","An animal that hunts and eats other animals","A type of fishing tool","A shadow cast on water"], correct:1 },
-      { type:'main_idea', q:"What is the main message of this passage?",
-        choices:["Tide pools are dangerous places","Grandmothers always know everything about science","Paying close attention to nature reveals hidden wonders","Marine biologists study sea anemones every day"], correct:2 }
-    ]
-  },
-  {
-    id:'medium', grades:[6,7,8], difficulty:1,
-    title:"The Code Breakers of Bletchley Park",
-    genre:"History", genreEmoji:"📜",
-    wordCount:195,
-    readMinutes:"4–5",
-    text:`During World War II, a quiet English estate called Bletchley Park became one of the most important secrets of the Allied forces. Inside its huts and converted buildings, a remarkable group of mathematicians, linguists, and puzzle enthusiasts worked around the clock to break the encrypted communications of Nazi Germany.
-
-The Germans relied on a sophisticated machine called Enigma to encode their military messages. With billions of possible settings, Enigma-generated codes seemed mathematically unbreakable. German commanders were so confident in its security that they transmitted detailed military plans over open radio waves without concern.
-
-That confidence proved fatal. A British mathematician named Alan Turing, along with his colleagues, developed an electromechanical device called the Bombe. By exploiting predictable patterns in German messages — such as standardized weather reports and repeated phrases — Turing's team could narrow down Enigma's countless combinations and crack daily codes within hours.
-
-Historians estimate that the work at Bletchley Park shortened World War II by two to four years, potentially saving millions of lives. Yet the code breakers could not celebrate publicly. Their work remained classified for decades. Many lived out their lives without ever being recognized for one of history's greatest intellectual achievements.`,
-    questions:[
-      { type:'literal', q:"What was Bletchley Park?",
-        choices:["A German military base","A British site for code-breaking operations","A type of encryption machine","An Allied naval command station"], correct:1 },
-      { type:'literal', q:"What device did Alan Turing's team develop to crack Enigma?",
-        choices:["The Colossus","The Bombe","The Cipher Engine","The Decoder"], correct:1 },
-      { type:'inferential', q:"Why couldn't the code breakers publicly celebrate their success?",
-        choices:["They were embarrassed by their work","Their operations were kept secret for national security","They weren't sure the war was truly over","They disagreed about who deserved credit"], correct:1 },
-      { type:'vocabulary', q:"The word 'classified' as used in the passage most nearly means:",
-        choices:["Organized into categories","Kept secret by the government","Printed in official textbooks","Formally recognized by leaders"], correct:1 },
-      { type:'main_idea', q:"What is the central idea of this passage?",
-        choices:["Alan Turing was a world-famous mathematician","The Enigma machine was impossible to crack manually","Bletchley Park's secret intelligence work significantly influenced World War II","The Allies were better at mathematics than the Germans"], correct:2 }
-    ]
-  },
-  {
-    id:'hard', grades:[9,10,11,12], difficulty:2,
-    title:"The Neuroplasticity Revolution",
-    genre:"Science", genreEmoji:"🧠",
-    wordCount:210,
-    readMinutes:"5–7",
-    text:`For most of scientific history, the brain was considered a static organ — a biological machine whose fundamental architecture was largely fixed by early adulthood. By the twentieth century, this dogma had become so entrenched that neuroscientists rarely questioned it. The brain you developed as a child, prevailing theory held, was essentially the brain you would carry to your grave.
-
-Modern neuroscience has dismantled this assumption with remarkable force. Research over the past four decades has demonstrated that the brain possesses extraordinary plasticity: the capacity to reorganize its synaptic connections, generate new neural pathways, and even, in limited circumstances, produce new neurons through a process called neurogenesis. This restructuring occurs in response to learning, environmental stimulation, injury, and sustained behavioral change.
-
-The implications are profound and far-reaching. In rehabilitation medicine, neuroplasticity underpins therapies for stroke victims, whose brains can sometimes reroute functions around damaged regions. In education, it validates the principle that deliberate practice and deep engagement — rather than innate talent alone — can fundamentally alter cognitive capacity. In psychiatry, it offers a biological explanation for why cognitive-behavioral therapy produces measurable structural changes in the brain.
-
-Critics caution against overinterpreting the evidence. Plasticity is not unlimited; it diminishes significantly with age, and the precise mechanisms remain incompletely understood. Nevertheless, the paradigm shift has been irreversible. We now understand the brain not as a fixed instrument, but as a dynamic system — perpetually sculpted by experience, and never truly finished.`,
-    questions:[
-      { type:'literal', q:"What did scientists traditionally believe about the adult brain?",
-        choices:["It could grow and expand throughout life","Its structure was largely fixed after early childhood","It produced large numbers of new neurons constantly","It became more adaptable with age"], correct:1 },
-      { type:'literal', q:"What is 'neurogenesis' as described in the passage?",
-        choices:["The reorganization of synaptic connections","The process of producing new neurons","A rehabilitation therapy for stroke victims","A type of experimental brain surgery"], correct:1 },
-      { type:'inferential', q:"Why does the author mention that critics 'caution against overinterpreting the evidence'?",
-        choices:["To suggest neuroplasticity is a myth","To present a balanced view of a complex scientific topic","To argue that older theories were correct all along","To discourage further research into the field"], correct:1 },
-      { type:'vocabulary', q:"As used in the passage, 'paradigm shift' most nearly means:",
-        choices:["A minor adjustment to an existing theory","A complete change in the fundamental way something is understood","A specific type of brain reorganization","A shift in political or public opinion"], correct:1 },
-      { type:'main_idea', q:"Which statement best captures the central argument of this passage?",
-        choices:["Neuroplasticity research has important limitations that scientists must acknowledge","The brain is a fixed biological structure that does not change after childhood","Recent discoveries have transformed our understanding of the brain as a dynamic, adaptable system","Cognitive behavioral therapy is currently the most important use of neuroplasticity research"], correct:2 }
-    ]
+    passages = await res.json();
+  } catch (err) {
+    console.error(err);
+    passages = [];
   }
-];
+}
 
 // ============================================================
 // RANDOM FOREST CLASSIFIER — 11 Decision Trees
 // ============================================================
 function extractFeatures(answers, passage, readingMs) {
-  const qs = passage.questions;
-  const correct = answers.map((a,i) => a === qs[i].correct);
-  const lit  = (correct[0] ? 1:0) + (correct[1] ? 1:0);
-  const lit_acc  = lit / 2;
-  const inf_acc  = correct[2] ? 1 : 0;
-  const voc_acc  = correct[3] ? 1 : 0;
-  const mid_acc  = correct[4] ? 1 : 0;
-  const overall  = correct.filter(Boolean).length / 5;
-  const readSec  = readingMs / 1000;
-  const time_f   = Math.min(1, Math.max(0, (readSec - 20) / 160));
-  return { lit_acc, inf_acc, voc_acc, mid_acc, overall, time_f, diff: passage.difficulty, correct };
+  const qs = passage.questions || [];
+  const correctness = qs.map((q, i) => answers[i] === q.correct);
+
+  const literal = qs.filter((q, i) => q.type === 'literal' && correctness[i]);
+  const inferential = qs.filter((q, i) => q.type === 'inferential' && correctness[i]);
+  const vocabulary = qs.filter((q, i) => (q.type === 'vocabulary' || q.type === 'vocab') && correctness[i]);
+  const mainIdea = qs.filter((q, i) => (q.type === 'main_idea' || q.type === 'critical') && correctness[i]);
+
+  const lit_acc = qs.filter(q => q.type === 'literal').length
+    ? literal.length / qs.filter(q => q.type === 'literal').length
+    : 0;
+  const inf_acc = qs.filter(q => q.type === 'inferential').length
+    ? inferential.length / qs.filter(q => q.type === 'inferential').length
+    : 0;
+  const voc_acc = qs.filter(q => q.type === 'vocabulary' || q.type === 'vocab').length
+    ? vocabulary.length / qs.filter(q => q.type === 'vocabulary' || q.type === 'vocab').length
+    : 0;
+  const mid_acc = qs.filter(q => q.type === 'main_idea' || q.type === 'critical').length
+    ? mainIdea.length / qs.filter(q => q.type === 'main_idea' || q.type === 'critical').length
+    : 0;
+  const overall = correctness.length ? correctness.filter(Boolean).length / correctness.length : 0;
+  const readSec = readingMs / 1000;
+  const time_f = Math.min(1, Math.max(0, (readSec - 20) / 160));
+  return { lit_acc, inf_acc, voc_acc, mid_acc, overall, time_f, diff: passage.difficulty, correct: correctness };
 }
 
 // Each tree returns a band 0–5
@@ -312,14 +250,7 @@ function renderWelcome() {
       </div>
     </div>
 
-    <div class="card" style="padding:1.5rem;margin-bottom:2rem;">
-      <label style="display:block;font-weight:700;font-size:0.875rem;margin-bottom:0.875rem;">What grade are you in?</label>
-      <div style="display:flex;flex-wrap:wrap;gap:0.5rem;" id="gradeChips">
-        ${[3,4,5,6,7,8,9,10,11,12].map(g=>`
-          <button class="grade-chip ${state.grade===g?'selected':''}" onclick="selectGrade(${g})">Grade ${g}</button>
-        `).join('')}
-      </div>
-    </div>
+    
 
     <button class="btn-primary" style="width:100%;font-size:1rem;" onclick="startAssessment()">
       Start Assessment <span class="material-symbols-outlined" style="font-size:1.25rem;">arrow_forward</span>
@@ -634,31 +565,18 @@ function selectGrade(g) {
 }
 
 async function startAssessment() {
-  // Set default name since input was removed
   state.name = state.name || 'Student';
-  if (!state.grade) { alert('Please select your grade! 📚'); return; }
 
-  try {
-    const res = await fetch('/api/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: state.name, grade: state.grade })
-    });
-    const payload = await res.json();
+  if (!passages.length) {
+    await loadPassages();
+  }
 
-    if (!res.ok) {
-      throw new Error(payload.error || 'Registration failed');
-    }
-
-    state.userId = payload.user_id;
-    console.log('Registered user_id', state.userId);
-  } catch (err) {
-    console.error('Registration error', err);
-    alert('Could not register user. Please check your connection and try again.');
+  if (!passages.length) {
+    alert('Assessment passages are not available yet. Please seed the database first.');
     return;
   }
 
-  state.passage = passages.find(p=>p.grades.includes(state.grade)) || passages[1];
+  state.passage = passages.find(p => p.grades.includes(state.grade)) || passages[0];
   state.answers = []; state.currentQ = 0;
   state.screen = 'passage'; render();
 }
@@ -699,6 +617,7 @@ function goToLibrary() {
 // INIT
 // ============================================================
 render();
+loadPassages();
 </script>
 </body>
 </html>

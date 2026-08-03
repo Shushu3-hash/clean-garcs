@@ -257,6 +257,48 @@ def _fetch_candidates(skill_tag, difficulty):
     return Question.query.filter_by(skill_tag=skill_tag, difficulty=difficulty).all()
 
 
+@app.route('/api/assessment/passages')
+def assessment_passages():
+    passages = []
+    for passage in Passage.query.order_by(Passage.id).all():
+        questions = []
+        for question in Question.query.filter_by(passage_id=passage.id).order_by(Question.id).all():
+            questions.append({
+                "id": question.id,
+                "type": {
+                    "literal": "literal",
+                    "inferential": "inferential",
+                    "critical": "main_idea",
+                }.get(question.skill_tag, question.skill_tag),
+                "q": question.prompt,
+                "choices": question.choices or [],
+                "correct": question.correct_index,
+                "skill_tag": question.skill_tag,
+                "difficulty": question.difficulty,
+            })
+
+        grade_band = passage.grade_band or 1
+        grades = {1: [3, 4, 5], 2: [6, 7, 8], 3: [9, 10, 11, 12]}.get(grade_band, [grade_band * 3])
+        difficulty = {1: 0, 2: 1, 3: 2}.get(grade_band, 1)
+        word_count = len((passage.body or "").split())
+        read_minutes = f"{max(1, word_count // 120)}-{max(2, word_count // 120 + 1)}"
+
+        passages.append({
+            "id": passage.id,
+            "title": passage.title,
+            "genre": "Reading",
+            "genreEmoji": "📖",
+            "wordCount": max(word_count, 120),
+            "readMinutes": read_minutes,
+            "grades": grades,
+            "difficulty": difficulty,
+            "text": passage.body or "",
+            "questions": questions,
+        })
+
+    return jsonify(passages)
+
+
 # =====================================
 # ADAPTIVE QUESTION SELECTION
 # =====================================
