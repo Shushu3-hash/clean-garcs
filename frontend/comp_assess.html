@@ -14,191 +14,17 @@
 
 <script>
 // ============================================================
-// DATA — PASSAGES & QUESTIONS
-// ============================================================
-let passages = [];
-
-async function loadPassages() {
-  try {
-    const res = await fetch('/api/assessment/passages');
-    if (!res.ok) {
-      throw new Error('Unable to load passages');
-    }
-
-    passages = await res.json();
-  } catch (err) {
-    console.error(err);
-    passages = [];
-  }
-}
-
-// ============================================================
-// RANDOM FOREST CLASSIFIER — 11 Decision Trees
-// ============================================================
-function extractFeatures(answers, passage, readingMs) {
-  const qs = passage.questions || [];
-  const correctness = qs.map((q, i) => answers[i] === q.correct);
-
-  const literal = qs.filter((q, i) => q.type === 'literal' && correctness[i]);
-  const inferential = qs.filter((q, i) => q.type === 'inferential' && correctness[i]);
-  const vocabulary = qs.filter((q, i) => (q.type === 'vocabulary' || q.type === 'vocab') && correctness[i]);
-  const mainIdea = qs.filter((q, i) => (q.type === 'main_idea' || q.type === 'critical') && correctness[i]);
-
-  const lit_acc = qs.filter(q => q.type === 'literal').length
-    ? literal.length / qs.filter(q => q.type === 'literal').length
-    : 0;
-  const inf_acc = qs.filter(q => q.type === 'inferential').length
-    ? inferential.length / qs.filter(q => q.type === 'inferential').length
-    : 0;
-  const voc_acc = qs.filter(q => q.type === 'vocabulary' || q.type === 'vocab').length
-    ? vocabulary.length / qs.filter(q => q.type === 'vocabulary' || q.type === 'vocab').length
-    : 0;
-  const mid_acc = qs.filter(q => q.type === 'main_idea' || q.type === 'critical').length
-    ? mainIdea.length / qs.filter(q => q.type === 'main_idea' || q.type === 'critical').length
-    : 0;
-  const overall = correctness.length ? correctness.filter(Boolean).length / correctness.length : 0;
-  const readSec = readingMs / 1000;
-  const time_f = Math.min(1, Math.max(0, (readSec - 20) / 160));
-  return { lit_acc, inf_acc, voc_acc, mid_acc, overall, time_f, diff: passage.difficulty, correct: correctness };
-}
-
-// Each tree returns a band 0–5
-// 0=<400L  1=400-600L  2=600-800L  3=800-1000L  4=1000-1200L  5=>1200L
-const trees = [
-  // T1: Overall + difficulty
-  f => {
-    const b = f.diff;
-    if (f.overall >= 0.8) return Math.min(5, b+2);
-    if (f.overall >= 0.6) return Math.min(5, b+1);
-    if (f.overall >= 0.4) return b;
-    return Math.max(0, b-1);
-  },
-  // T2: Vocabulary depth
-  f => {
-    const b = f.diff;
-    if (f.voc_acc===1 && f.inf_acc===1) return Math.min(5, b+2);
-    if (f.voc_acc===1) return Math.min(5, b+1);
-    if (f.voc_acc===0 && f.lit_acc<0.5) return Math.max(0, b-1);
-    return b;
-  },
-  // T3: Inferential + main idea (deep comprehension)
-  f => {
-    const deep = (f.inf_acc + f.mid_acc) / 2;
-    const b = f.diff;
-    if (deep >= 1) return Math.min(5, b+2);
-    if (deep >= 0.5) return Math.min(5, b+1);
-    if (deep === 0) return Math.max(0, b-1);
-    return b;
-  },
-  // T4: Literal comprehension focus
-  f => {
-    const b = f.diff;
-    if (f.lit_acc < 0.5) return Math.max(0, b-1);
-    if (f.lit_acc >= 1 && f.overall >= 0.7) return Math.min(5, b+1);
-    return b;
-  },
-  // T5: Time factor bonus
-  f => {
-    const b = f.diff;
-    const tb = f.time_f > 0.45 ? 1 : 0;
-    const ab = f.overall >= 0.8 ? 1 : f.overall < 0.4 ? -1 : 0;
-    return Math.min(5, Math.max(0, b + ab + tb));
-  },
-  // T6: Weighted composite
-  f => {
-    const s = f.lit_acc*0.2 + f.inf_acc*0.3 + f.voc_acc*0.3 + f.mid_acc*0.2;
-    const b = f.diff;
-    if (s >= 0.8) return Math.min(5, b+2);
-    if (s >= 0.6) return Math.min(5, b+1);
-    if (s >= 0.4) return b;
-    return Math.max(0, b-1);
-  },
-  // T7: Difficulty-specific rules
-  f => {
-    if (f.diff===0) {
-      if (f.overall>=0.8) return 2; if (f.overall>=0.5) return 1; return 0;
-    } else if (f.diff===1) {
-      if (f.overall>=0.8) return 3; if (f.overall>=0.6) return 2; if (f.overall>=0.4) return 1; return 0;
-    } else {
-      if (f.overall>=0.8) return 4; if (f.overall>=0.6) return 3; if (f.overall>=0.4) return 2; return 1;
-    }
-  },
-  // T8: Vocab + Inferential combo
-  f => {
-    const d = (f.voc_acc + f.inf_acc) / 2;
-    const b = f.diff;
-    if (d >= 1) return Math.min(5, b+2);
-    if (d >= 0.5) return Math.min(5, b+1);
-    return Math.max(0, b - (d===0?1:0));
-  },
-  // T9: Normalized all-feature average
-  f => {
-    const avg = (f.lit_acc+f.inf_acc+f.voc_acc+f.mid_acc+f.time_f)/5;
-    const b = f.diff;
-    return Math.min(5, Math.max(0, b + Math.round(avg*2) - 1));
-  },
-  // T10: Penalize weak vocabulary heavily
-  f => {
-    const b = f.diff;
-    if (f.voc_acc===0 && f.inf_acc===0) return Math.max(0, b-1);
-    if (f.voc_acc===1 && f.mid_acc===1) return Math.min(5, b+2);
-    return b + (f.overall >= 0.6 ? 1 : 0);
-  },
-  // T11: High-performer detection
-  f => {
-    const b = f.diff;
-    const perfect = f.overall === 1;
-    const strong  = f.overall >= 0.8 && f.time_f > 0.3;
-    const weak    = f.overall < 0.4;
-    if (perfect) return Math.min(5, b+3);
-    if (strong)  return Math.min(5, b+2);
-    if (weak)    return Math.max(0, b-1);
-    return Math.min(5, b+1);
-  }
-];
-
-function runRandomForest(features) {
-  const votes = trees.map(t => t(features));
-  const counts = {};
-  votes.forEach(v => { counts[v] = (counts[v]||0)+1; });
-  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
-  const band = parseInt(sorted[0][0]);
-
-  const lexileBases = [300, 500, 700, 860, 1100, 1300];
-  const ranges      = ['200L–400L','400L–600L','600L–800L','800L–1000L','1000L–1200L','1200L+'];
-  const labels      = ['Early Reader','Developing Reader','Intermediate Reader','Proficient Reader','Advanced Reader','Expert Reader'];
-  const gradeEqs    = ['Grades 1–3','Grades 3–5','Grades 5–7','Grades 7–9','Grades 9–11','Grades 11–12+'];
-  const colors      = ['#f59e0b','#3b82f6','#8b5cf6','#00675b','#059669','#0d9488'];
-  const bgColors    = ['#fef3c7','#dbeafe','#ede9fe','#d4fffb','#d1fae5','#ccfbf1'];
-
-  const offset = Math.round((features.overall - 0.5) * 90);
-  const lexile = Math.max(100, Math.min(1400, lexileBases[band] + offset));
-
-  const aspects = [
-    { name:'Literal Comprehension',  score:features.lit_acc, icon:'📖' },
-    { name:'Inferential Reasoning',  score:features.inf_acc, icon:'🧠' },
-    { name:'Vocabulary in Context',  score:features.voc_acc, icon:'📝' },
-    { name:'Main Idea & Purpose',    score:features.mid_acc, icon:'🎯' },
-  ];
-  aspects.sort((a,b)=>b.score-a.score);
-  const strengths  = aspects.slice(0,2).filter(a=>a.score>=0.5).map(a=>a.name);
-  const growthAreas= aspects.slice(-2).filter(a=>a.score<0.5).map(a=>a.name);
-
-  return { band, lexile, range:ranges[band], label:labels[band],
-           gradeEq:gradeEqs[band], color:colors[band], bgColor:bgColors[band],
-           votes, counts, features, strengths, growthAreas, aspects };
-}
-
-// ============================================================
 // APP STATE
 // ============================================================
 const state = {
   screen: 'welcome',
   name: '', grade: null, passage: null,
+  currentQuestion: null,
   userId: null,
   answers: [], currentQ: 0,
   readingStart: null, readingEnd: null,
-  prediction: null
+  prediction: null,
+  isLoading: false
 };
 
 // ============================================================
@@ -306,9 +132,13 @@ function renderPassage() {
 
 // ---------- QUESTIONS SCREEN ----------
 function renderQuestions() {
-  const q = state.passage.questions[state.currentQ];
-  const pct = (state.currentQ / state.passage.questions.length) * 100;
-  const sel = state.answers[state.currentQ] !== undefined ? state.answers[state.currentQ] : null;
+  const q = state.currentQuestion;
+  if (!q) {
+    app.innerHTML = `<div class="fade-in-up">${headerHTML()}<div class="card" style="padding:1.5rem;">No question is available right now.</div></div>`;
+    return;
+  }
+
+  const sel = state.answers[0] !== undefined ? state.answers[0] : null;
   const typeMeta = {
     literal:   { label:'📖 Literal',   bg:'var(--secondary-container)', color:'var(--on-secondary-container)' },
     inferential:{ label:'🧠 Inferential', bg:'#ede9fe', color:'#5b21b6' },
@@ -316,16 +146,18 @@ function renderQuestions() {
     main_idea:  { label:'🎯 Main Idea',  bg:'#fce7f3', color:'#9d174d' },
   };
   const tm = typeMeta[q.type] || typeMeta.literal;
-  const isLast = state.currentQ === state.passage.questions.length - 1;
 
   app.innerHTML = `<div class="fade-in-up">
     ${headerHTML()}
-    <div style="margin-bottom:1.5rem;">
+    ${state.passage ? `<div class="card" style="padding:1.25rem;margin-bottom:1rem;">
+      <div style="font-size:0.75rem;font-weight:700;color:var(--primary);margin-bottom:0.5rem;">${state.passage.title || 'Passage'}</div>
+      <div style="font-size:0.875rem;line-height:1.6;color:var(--on-surface-variant);">${(state.passage.text || '').split('\n\n').map(para=>`<p style="margin-bottom:0.75rem;">${para}</p>`).join('')}</div>
+    </div>` : ''}
+    <div style="margin-bottom:1.25rem;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
-        <span style="font-size:0.75rem;font-weight:700;color:var(--on-surface-variant);">Question ${state.currentQ+1} of ${state.passage.questions.length}</span>
-        <span style="font-size:0.75rem;font-weight:700;color:var(--primary);">${Math.round(pct)}% complete</span>
+        <span style="font-size:0.75rem;font-weight:700;color:var(--on-surface-variant);">Adaptive Question</span>
+        <span style="font-size:0.75rem;font-weight:700;color:var(--primary);">Live from the backend</span>
       </div>
-      <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
     </div>
 
     <div style="display:inline-flex;align-items:center;background:${tm.bg};color:${tm.color};padding:0.375rem 0.875rem;border-radius:9999px;font-size:0.75rem;font-weight:700;margin-bottom:1rem;">${tm.label}</div>
@@ -343,12 +175,9 @@ function renderQuestions() {
       `).join('')}
     </div>
 
-    <div style="display:flex;gap:0.75rem;">
-      ${state.currentQ > 0 ? `<button class="btn-outline" style="flex:1;" onclick="prevQuestion()">← Back</button>` : ''}
-      <button class="btn-primary" style="flex:2;" ${sel===null?'disabled':''} onclick="nextQuestion()">
-        ${isLast ? 'Submit & Get My Lexile 🎯' : 'Next Question →'}
-      </button>
-    </div>
+    <button class="btn-primary" style="width:100%;" ${sel===null?'disabled':''} onclick="nextQuestion()">
+      Submit Answer →
+    </button>
   </div>`;
 }
 
@@ -564,39 +393,140 @@ function selectGrade(g) {
   });
 }
 
+async function loadNextQuestion() {
+  const savedStudent = localStorage.getItem('garcs_student');
+  let student = null;
+  if (savedStudent) {
+    try {
+      student = JSON.parse(savedStudent);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  const studentId = student?.student_id || state.userId;
+  if (!studentId) {
+    window.location.href = '/login';
+    return false;
+  }
+
+  state.userId = studentId;
+  state.isLoading = true;
+  app.innerHTML = `<div class="fade-in-up" style="text-align:center;padding:2rem 0;">${headerHTML()}<p style="color:var(--on-surface-variant);">Loading your next adaptive question…</p></div>`;
+
+  try {
+    const sessionRes = await fetch('/api/session/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ student_id: studentId })
+    });
+
+    if (!sessionRes.ok) {
+      const payload = await sessionRes.json().catch(() => ({}));
+      throw new Error(payload.error || 'Unable to initialize your skill states.');
+    }
+
+    const questionRes = await fetch(`/api/question/next?student_id=${studentId}`);
+    if (!questionRes.ok) {
+      const payload = await questionRes.json().catch(() => ({}));
+      throw new Error(payload.error || 'Unable to load the next question.');
+    }
+
+    const payload = await questionRes.json();
+    if (payload.done) {
+      state.currentQuestion = null;
+      state.passage = { title: 'Assessment complete', text: payload.message || 'You have completed the available questions.', genre: 'Reading', genreEmoji: '🎉', wordCount: 0 };
+      state.screen = 'results';
+      render();
+      return false;
+    }
+
+    state.passage = payload.passage ? {
+      id: payload.passage.id,
+      title: payload.passage.title || 'Reading Passage',
+      text: payload.passage.body || '',
+      genre: 'Reading',
+      genreEmoji: '📖',
+      wordCount: Math.max(60, (payload.passage.body || '').split(/\s+/).filter(Boolean).length)
+    } : { title: 'Reading Passage', text: '', genre: 'Reading', genreEmoji: '📖', wordCount: 0 };
+
+    state.currentQuestion = {
+      id: payload.question_id,
+      q: payload.prompt,
+      choices: payload.choices || [],
+      type: {
+        literal: 'literal',
+        inferential: 'inferential',
+        critical: 'main_idea',
+        main_idea: 'main_idea',
+        vocabulary: 'vocabulary'
+      }[payload.skill_tag] || 'literal',
+      skill_tag: payload.skill_tag,
+      difficulty: payload.difficulty,
+    };
+
+    state.answers = [];
+    state.currentQ = 0;
+    state.readingStart = Date.now();
+    state.screen = 'questions';
+    return true;
+  } catch (err) {
+    console.error(err);
+    alert(err.message || 'Could not load the next question.');
+    return false;
+  } finally {
+    state.isLoading = false;
+  }
+}
+
 async function startAssessment() {
   state.name = state.name || 'Student';
-
-  if (!passages.length) {
-    await loadPassages();
+  const loaded = await loadNextQuestion();
+  if (loaded) {
+    state.screen = 'passage';
+    render();
   }
-
-  if (!passages.length) {
-    alert('Assessment passages are not available yet. Please seed the database first.');
-    return;
-  }
-
-  state.passage = passages.find(p => p.grades.includes(state.grade)) || passages[0];
-  state.answers = []; state.currentQ = 0;
-  state.screen = 'passage'; render();
 }
 
 function goToQuestions() {
   state.readingEnd = Date.now();
-  state.screen = 'questions'; render();
+  state.screen = 'questions';
+  render();
 }
 
 function selectAnswer(i) {
-  state.answers[state.currentQ] = i; render();
+  state.answers[0] = i;
+  render();
 }
 
-function nextQuestion() {
-  if (state.answers[state.currentQ]===undefined) return;
-  if (state.currentQ < state.passage.questions.length-1) {
-    state.currentQ++; render();
-  } else {
-    state.readingEnd = state.readingEnd || Date.now();
-    state.screen = 'processing'; render();
+async function nextQuestion() {
+  if (state.answers[0] === undefined) return;
+
+  try {
+    const response = await fetch('/api/answer', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        student_id: state.userId,
+        question_id: state.currentQuestion?.id,
+        chosen_index: state.answers[0],
+        response_time_sec: Math.max(0, Math.round((Date.now() - (state.readingStart || Date.now())) / 1000)),
+        reread_count: 0
+      })
+    });
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      throw new Error(payload.error || 'Unable to save your answer.');
+    }
+
+    await loadNextQuestion();
+    if (state.screen === 'questions') {
+      render();
+    }
+  } catch (err) {
+    console.error(err);
+    alert(err.message || 'Could not save your answer.');
   }
 }
 
@@ -617,7 +547,6 @@ function goToLibrary() {
 // INIT
 // ============================================================
 render();
-loadPassages();
 </script>
 </body>
 </html>
