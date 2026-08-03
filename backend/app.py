@@ -157,6 +157,16 @@ BAND_RANK = {"Weak": 0, "Developing": 1, "Strong": 2}
 # =====================================
 @app.route("/")
 def home():
+    return send_file('../frontend/login.html')
+
+
+@app.route("/login")
+def login_page():
+    return send_file('../frontend/login.html')
+
+
+@app.route("/dashboard")
+def dashboard_page():
     return send_file('../frontend/dashboard.html')
 
 
@@ -203,7 +213,7 @@ def register():
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.json or {}
-    email = data.get("email")
+    email = data.get("email") or data.get("identifier")
     password = data.get("password", "")
 
     student = Student.query.filter_by(email=email).first()
