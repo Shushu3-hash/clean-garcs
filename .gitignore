@@ -5,7 +5,7 @@
 *.sql
 
 # Virtual environment
-.venv/
-.env310/
+env310
  
 __pycache__/
+backend/instance/database.db
