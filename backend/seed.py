@@ -98,7 +98,7 @@ PASSAGES = [
                     "correct_index": 1,
                     "skill_tag": "inferential",
                     "difficulty": "medium",
-                    "needs_review": true
+                    "needs_review": True
                 },
                 {
                     "prompt": "One might infer from this passage that lower prices   _  .",
@@ -111,7 +111,7 @@ PASSAGES = [
                     "correct_index": 0,
                     "skill_tag": "inferential",
                     "difficulty": "medium",
-                    "needs_review": true
+                    "needs_review": True
                 },
                 {
                     "prompt": "It seems likely that many Americans  _  .",
@@ -124,7 +124,7 @@ PASSAGES = [
                     "correct_index": 3,
                     "skill_tag": "inferential",
                     "difficulty": "medium",
-                    "needs_review": true
+                    "needs_review": True
                 }
             ]
         },

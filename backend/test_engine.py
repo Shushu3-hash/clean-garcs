@@ -1,8 +1,8 @@
 """
 test_engine.py — Unit tests for mastery.py + sequencing.py.
 
-Run with: pytest test_engine.py -v
-(or: python -m pytest test_engine.py -v)
+Run with: pytest backend/test_engine.py -v
+(or: python -m pytest backend/test_engine.py -v)
 
 These are pure-Python tests with no Flask/DB dependency, matching Phase 2
 of the roadmap ("unit-test the engine before touching Flask routes").
