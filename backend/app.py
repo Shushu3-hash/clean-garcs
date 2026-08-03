@@ -241,7 +241,7 @@ def session_start():
             db.session.add(StudentSkillState(student_id=student_id, skill_tag=skill))
     db.session.commit()
 
-    return jsonify({"student_id": student_id, "ready": True})
+    return jsonify({"student_id": int(student_id), "ready": True})
 
 
 # =====================================
