@@ -82,11 +82,30 @@ from sequencing import pick_next_question, relax_difficulty
 # =====================================
 # APP SETUP
 # =====================================
-app = Flask(__name__, static_folder='../frontend', static_url_path='')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent
+
+app = Flask(
+    __name__,
+    static_folder="../frontend",
+    static_url_path="",
+    instance_path=str(BASE_DIR / "instance"),
+    instance_relative_config=True,
+)
+DATABASE_FILE = Path(app.instance_path) / "database.db"
+DATABASE_FILE.parent.mkdir(parents=True, exist_ok=True)
+
+app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DATABASE_FILE}"
 
 db = SQLAlchemy(app)
+from pathlib import Path
+
+print("=" * 60)
+print("INSTANCE:", app.instance_path)
+print("DATABASE:", Path(app.instance_path) / "database.db")
+print("=" * 60)
+
 CORS(app)
 
 
@@ -325,6 +344,30 @@ def question_next():
     answered_ids = [r.question_id for r in Response.query.filter_by(student_id=student_id).all()]
 
     question, skill_tag, difficulty = pick_next_question(states, _fetch_candidates, answered_ids)
+
+    print("Questions in DB:", Question.query.count())
+
+    print("literal-medium:",
+        len(_fetch_candidates("literal", "medium")))
+
+    print("literal-easy:",
+        len(_fetch_candidates("literal", "easy")))
+
+    print("inferential-medium:",
+        len(_fetch_candidates("inferential", "medium")))
+
+    print("critical-medium:",
+        len(_fetch_candidates("critical", "medium")))
+
+    print("States:")
+    for s in states.values():
+        print(s.skill_tag, s.mastery)
+
+    print("Answered:", answered_ids)
+
+    print("Chosen skill:", skill_tag)
+    print("Chosen difficulty:", difficulty)
+    print("Question:", question)
 
     # Fallback chain if the exact (skill, difficulty) pool is empty: relax
     # difficulty toward "medium" first, then fall back to any unanswered

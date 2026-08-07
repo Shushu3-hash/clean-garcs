@@ -382,6 +382,9 @@ PASSAGES = [
     },
 ]
 
+import os
+from app import app
+
 
 def seed():
     with app.app_context():
@@ -409,6 +412,11 @@ def seed():
                     )
                 )
                 total_questions += 1
+        
+
+        print(app.instance_path)
+        print(app.config["SQLALCHEMY_DATABASE_URI"])
+        print(os.path.abspath(os.path.join(app.instance_path, "database.db")))        
 
         db.session.commit()
         print(f"Seeded {len(PASSAGES)} passages and {total_questions} questions.")

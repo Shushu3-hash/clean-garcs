@@ -8,4 +8,5 @@
 env310
  
 __pycache__/
+backend/instance/
 backend/instance/database.db
