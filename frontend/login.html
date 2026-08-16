@@ -202,53 +202,63 @@
 
       try {
         let response = await fetch('/api/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
         });
 
         let payload = await response.json();
 
-        if (!response.ok) {
-          const fallbackName = email.split('@')[0] || 'Student';
-          const registerResponse = await fetch('/api/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              name: fallbackName,
-              grade: 5,
-              email,
-              password
-            })
-          });
+        // Student doesn't exist → automatically register
+        if (response.status === 404) {
+            const fallbackName = email.split('@')[0] || 'Student';
 
-          const registerPayload = await registerResponse.json();
-          if (!registerResponse.ok) {
-            throw new Error(registerPayload.error || 'Unable to create your account');
-          }
+            const registerResponse = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: fallbackName,
+                    grade: 5,
+                    email,
+                    password
+                })
+            });
 
-          response = await fetch('/api/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
-          });
-          payload = await response.json();
+            const registerPayload = await registerResponse.json();
+
+            if (!registerResponse.ok) {
+                throw new Error(
+                    registerPayload.error || 'Unable to create your account'
+                );
+            }
+
+            // Log in again after successful registration
+            response = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            payload = await response.json();
         }
 
         if (!response.ok) {
-          throw new Error(payload.error || 'Login failed');
+            throw new Error(payload.error || 'Login failed');
         }
 
         localStorage.setItem('garcs_student', JSON.stringify(payload));
         window.location.href = '/dashboard';
-      } catch (error) {
+
+    } catch (error) {
         console.error(error);
         alert(error.message || 'Unable to sign in right now.');
+
         if (submitButton) {
-          submitButton.disabled = false;
-          submitButton.innerHTML = 'Launch Library <span class="material-symbols-outlined text-lg" data-icon="rocket_launch">rocket_launch</span>';
+            submitButton.disabled = false;
+            submitButton.innerHTML =
+                'Launch Library <span class="material-symbols-outlined text-lg" data-icon="rocket_launch">rocket_launch</span>';
         }
-      }
+    }
     });
   }
 </script>
