@@ -54,9 +54,37 @@
 </div>
 <span class="text-xl font-bold text-[#006B5E] dark:text-teal-300 font-['Lexend']">Cognitive Sanctuary</span>
 </div>
-<button class="w-10 h-10 flex items-center justify-center text-[#006B5E] dark:text-teal-400 hover:scale-95 transition-transform duration-200">
+<!-- <button class="w-10 h-10 flex items-center justify-center text-[#006B5E] dark:text-teal-400 hover:scale-95 transition-transform duration-200">
 <span class="material-symbols-outlined" data-icon="settings">settings</span>
-</button>
+</button> -->
+
+<div class="relative inline-block">
+  <!-- Settings button -->
+  <button
+    id="settingsBtn"
+    class="w-10 h-10 flex items-center justify-center text-[#006B5E] dark:text-teal-400 hover:scale-95 transition-transform duration-200"
+    type="button"
+  >
+    <span class="material-symbols-outlined" data-icon="settings">settings</span>
+  </button>
+
+  <!-- Dropdown (hidden by default) -->
+  <div
+    id="settingsDropdown"
+    class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg z-50"
+  >
+    <!-- Logout button inside dropdown -->
+    <button
+      onclick="logout()"
+      class="w-full flex items-center gap-2 px-4 py-2 rounded-full text-red-700 hover:bg-red-50"
+      type="button"
+    >
+      <span class="material-symbols-outlined">logout</span>
+      <span>Log out</span>
+    </button>
+  </div>
+</div>
+
 </header>
 <main class="px-6 py-8 max-w-5xl mx-auto space-y-8">
 <section class="flex flex-col md:flex-row items-center justify-between gap-6 bg-surface-container rounded-xl p-8 relative overflow-hidden">
@@ -156,6 +184,33 @@
 </a>
 </nav>
 <script>
+// add drowdown menu for settings button
+
+  const settingsBtn = document.getElementById('settingsBtn');
+  const dropdown = document.getElementById('settingsDropdown');
+
+  settingsBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dropdown.classList.toggle('hidden');
+  });
+
+  // Close when clicking anywhere else
+  document.addEventListener('click', () => {
+    dropdown.classList.add('hidden');
+  });
+
+  // (Optional) Close after clicking an item
+  dropdown.addEventListener('click', () => {
+    dropdown.classList.add('hidden');
+  });
+
+  function logout() {
+    localStorage.removeItem('garcs_student');
+    window.location.href = '/login';
+  }
+
+  // Load student data and update the dashboard
+
   const student = JSON.parse(localStorage.getItem('garcs_student') || '{}');
   const welcomeName = document.getElementById('welcomeName');
   const pointsBadge = document.getElementById('pointsBadge');

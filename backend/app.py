@@ -229,18 +229,41 @@ def register():
     return jsonify({"student_id": student.id})
 
 
+# @app.route('/api/login', methods=['POST'])
+# def login():
+#     data = request.json or {}
+#     email = data.get("email") or data.get("identifier")
+#     password = data.get("password", "")
+
+#     student = Student.query.filter_by(email=email).first()
+#     if not student or not student.password_hash or not check_password_hash(student.password_hash, password):
+#         return jsonify({"error": "invalid credentials"}), 401
+
+#     return jsonify({"student_id": student.id, "name": student.name, "grade": student.grade})
+
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.json or {}
+
     email = data.get("email") or data.get("identifier")
     password = data.get("password", "")
 
     student = Student.query.filter_by(email=email).first()
-    if not student or not student.password_hash or not check_password_hash(student.password_hash, password):
+
+    if not student:
+        return jsonify({"error": "student_not_found"}), 404
+
+    if (
+        not student.password_hash
+        or not check_password_hash(student.password_hash, password)
+    ):
         return jsonify({"error": "invalid credentials"}), 401
 
-    return jsonify({"student_id": student.id, "name": student.name, "grade": student.grade})
-
+    return jsonify({
+        "student_id": student.id,
+        "name": student.name,
+        "grade": student.grade
+    })
 
 # =====================================
 # SESSION START -- ensures skill states exist (idempotent, safe to call every login)
