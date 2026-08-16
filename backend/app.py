@@ -198,6 +198,10 @@ def library():
 def progress_page():
     return send_file('../frontend/progress.html')
 
+@app.route("/register")
+def register_page():
+    return send_file('../frontend/registration.html')
+
 
 # =====================================
 # AUTH

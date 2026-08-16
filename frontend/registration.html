@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Register - Lumina Learn</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;700;800&amp;family=Plus+Jakarta+Sans:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "inverse-on-surface": "#cbfaf6",
+                    "surface-bright": "#D4FFFB",
+                    "mint-container": "#99ECDB",
+                    "secondary-container": "#95c4fe",
+                    "tertiary-container": "#526200",
+                    "secondary-fixed": "#d1e4ff",
+                    "surface-dim": "#b4e3df",
+                    "tertiary": "#3d4900",
+                    "surface-container-low": "#cefdf9",
+                    "sky-container": "#B3D4FF",
+                    "on-primary-fixed": "#00201b",
+                    "secondary-fixed-dim": "#9fcaff",
+                    "primary": "#004d44",
+                    "on-tertiary-fixed": "#181e00",
+                    "error-container": "#ffdad6",
+                    "surface-container-highest": "#bdece8",
+                    "surface-container-high": "#c2f1ed",
+                    "outline-teal": "#47807D",
+                    "surface-container-lowest": "#ffffff",
+                    "error": "#ba1a1a",
+                    "on-surface-variant": "#3e4946",
+                    "on-primary-fixed-variant": "#005047",
+                    "inverse-surface": "#023735",
+                    "outline-variant": "#bec9c5",
+                    "on-primary": "#ffffff",
+                    "primary-fixed-dim": "#85d5c6",
+                    "on-secondary": "#ffffff",
+                    "on-secondary-fixed": "#001d36",
+                    "on-error": "#ffffff",
+                    "surface-container": "#c8f7f3",
+                    "on-error-container": "#93000a",
+                    "inverse-primary": "#85d5c6",
+                    "error-red": "#B31B25",
+                    "surface-tint": "#096a5e",
+                    "lime-container": "#E9FE90",
+                    "on-primary-container": "#92e2d3",
+                    "on-tertiary-container": "#c9dd75",
+                    "tertiary-fixed": "#d8ec82",
+                    "surface": "#e3fffc",
+                    "on-secondary-fixed-variant": "#0a497b",
+                    "primary-container": "#00675b",
+                    "tertiary-fixed-dim": "#bcd069",
+                    "primary-fixed": "#a1f2e2",
+                    "background": "#e3fffc",
+                    "outline": "#6f7976",
+                    "on-surface": "#00201f",
+                    "on-background": "#00201f",
+                    "on-tertiary-fixed-variant": "#3f4c00",
+                    "secondary": "#2e6194",
+                    "on-secondary-container": "#195183",
+                    "on-tertiary": "#ffffff",
+                    "surface-variant": "#bdece8"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px",
+                    "card": "24px",
+                    "input": "16px"
+            },
+            "spacing": {
+                    "container-padding-mobile": "32px",
+                    "container-padding-desktop": "48px",
+                    "inline-gap": "12px",
+                    "base": "4px",
+                    "input-py": "16px",
+                    "input-px": "16px",
+                    "stack-gap": "24px"
+            },
+            "fontFamily": {
+                    "label-lg": [
+                            "Plus Jakarta Sans"
+                    ],
+                    "body-md": [
+                            "Plus Jakarta Sans"
+                    ],
+                    "display-lg-mobile": [
+                            "Lexend"
+                    ],
+                    "label-sm": [
+                            "Plus Jakarta Sans"
+                    ],
+                    "display-lg": [
+                            "Lexend"
+                    ],
+                    "headline-md": [
+                            "Lexend"
+                    ],
+                    "headline-lg": [
+                            "Lexend"
+                    ],
+                    "body-lg": [
+                            "Plus Jakarta Sans"
+                    ]
+            },
+            "fontSize": {
+                    "label-lg": [
+                            "14px",
+                            {
+                                    "lineHeight": "1.2",
+                                    "letterSpacing": "0.01em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "body-md": [
+                            "16px",
+                            {
+                                    "lineHeight": "1.5",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "display-lg-mobile": [
+                            "32px",
+                            {
+                                    "lineHeight": "1.2",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "label-sm": [
+                            "10px",
+                            {
+                                    "lineHeight": "1",
+                                    "letterSpacing": "0.05em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "display-lg": [
+                            "48px",
+                            {
+                                    "lineHeight": "1.1",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "headline-md": [
+                            "24px",
+                            {
+                                    "lineHeight": "1.2",
+                                    "fontWeight": "800"
+                            }
+                    ],
+                    "headline-lg": [
+                            "30px",
+                            {
+                                    "lineHeight": "1.2",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "body-lg": [
+                            "18px",
+                            {
+                                    "lineHeight": "1.6",
+                                    "fontWeight": "400"
+                            }
+                    ]
+            },
+            "boxShadow": {
+                "editorial": "0 20px 40px rgba(0, 53, 51, 0.06)"
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        .editorial-shadow {
+            box-shadow: 0 20px 40px rgba(0, 53, 51, 0.06);
+        }
+        
+        .fade-in-up {
+            animation: fadeInUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            opacity: 0;
+            transform: translateY(18px);
+        }
+
+        .stagger-1 { animation-delay: 0.1s; }
+        .stagger-2 { animation-delay: 0.2s; }
+        .stagger-3 { animation-delay: 0.3s; }
+        .stagger-4 { animation-delay: 0.4s; }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Custom Input Focus Ring overriding Tailwind Forms */
+        input:focus {
+            box-shadow: 0 0 0 4px rgba(0, 77, 68, 0.1) !important;
+        }
+    </style>
+</head>
+<body class="bg-surface-bright text-on-surface min-h-screen flex flex-col font-sans">
+<!-- TopNav - Suppressed for transactional intent (Registration), but keeping brand presence minimal -->
+<header class="fixed top-0 w-full flex justify-between items-center px-container-padding-mobile md:px-container-padding-desktop py-6 z-50">
+<div class="font-headline-md text-headline-md font-bold text-primary flex items-center gap-2">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">menu_book</span>
+            Lumina Learn
+        </div>
+<a class="font-label-lg text-label-lg text-primary hover:text-primary-container transition-colors duration-200" href="/login">Log In instead</a>
+</header>
+<!-- Main Content: Split Screen -->
+<main class="flex-grow flex flex-col lg:flex-row w-full max-w-[1600px] mx-auto pt-24 pb-8 px-container-padding-mobile md:px-container-padding-desktop gap-stack-gap">
+<!-- Left Side: Brand Messaging -->
+<section class="lg:w-1/2 flex flex-col justify-center items-start lg:pr-12 fade-in-up stagger-1 mb-12 lg:mb-0">
+<div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-mint-container/30 text-primary mb-6">
+<span class="material-symbols-outlined text-sm">auto_awesome</span>
+<span class="font-label-sm text-label-sm uppercase tracking-wider">Cognitive Sanctuary</span>
+</div>
+<h1 class="font-display-lg-mobile md:font-display-lg text-display-lg-mobile md:text-display-lg text-primary mb-6 leading-tight">
+                Begin your journey into brilliant thoughts.
+            </h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-lg mb-8">
+                Join a serene, focused environment designed for modern academic exploration. Leave the noise behind.
+            </p>
+<div class="relative w-full max-w-md rounded-2xl overflow-hidden editorial-shadow bg-surface-container-low p-6 mt-4">
+<div class="flex items-start gap-4">
+<span class="material-symbols-outlined text-primary text-3xl opacity-50">format_quote</span>
+<div>
+<p class="font-body-md text-body-md text-on-surface-variant italic mb-2">
+                            "The clearest minds emerge in the quietest spaces."
+                        </p>
+<p class="font-label-sm text-label-sm text-outline-teal uppercase">
+                            — Foundation Principle
+                        </p>
+</div>
+</div>
+</div>
+</section>
+<!-- Right Side: Registration Card -->
+<section class="lg:w-1/2 flex justify-center lg:justify-end items-center w-full">
+<div class="bg-surface-container-lowest w-full max-w-md rounded-card editorial-shadow p-8 fade-in-up stagger-2">
+<h2 class="font-headline-md text-headline-md text-primary mb-8 text-center">Create Account</h2>
+<form id="registrationForm" class="flex flex-col gap-stack-gap"></form>
+<!-- Username -->
+<div class="flex flex-col gap-inline-gap">
+<label class="font-label-lg text-label-lg text-on-surface" for="username">Username</label>
+<div class="relative">
+<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline">person</span>
+</div>
+<input class="w-full pl-12 pr-4 py-input-py rounded-input border-2 border-surface-container-high bg-surface-bright focus:bg-surface-container-lowest focus:border-primary/40 focus:ring-0 transition-colors duration-200 font-body-md text-body-md text-on-surface placeholder:text-outline-variant outline-none" id="username" name="username" placeholder="Choose a unique identifier" type="text"/>
+</div>
+</div>
+<!-- Student Number -->
+<div class="flex flex-col gap-inline-gap">
+<label class="font-label-lg text-label-lg text-on-surface" for="student-number">Student Number</label>
+<div class="relative">
+<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline">person</span>
+</div>
+<input class="w-full pl-12 pr-4 py-input-py rounded-input border-2 border-surface-container-high bg-surface-bright focus:bg-surface-container-lowest focus:border-primary/40 focus:ring-0 transition-colors duration-200 font-body-md text-body-md text-on-surface placeholder:text-outline-variant outline-none" id="student-number" name="student-number" placeholder="Enter your student number" type="text"/>
+</div>
+</div>
+<!-- Grade Level Selector (Chips) -->
+<div class="flex flex-col gap-inline-gap">
+<label class="font-label-lg text-label-lg text-on-surface">Grade Level</label>
+<div class="flex flex-wrap gap-2">
+<label class="cursor-pointer">
+<input class="peer sr-only" name="grade" type="radio" value="5"/>
+<div class="px-4 py-2 rounded-full border-2 border-surface-container-high bg-surface-bright text-on-surface-variant font-label-lg text-label-lg transition-all duration-200 peer-checked:bg-secondary-container peer-checked:border-secondary peer-checked:text-secondary hover:bg-surface-container-low">
+                                    5th
+                                </div>
+</label>
+<label class="cursor-pointer">
+<input class="peer sr-only" name="grade" type="radio" value="6"/>
+<div class="px-4 py-2 rounded-full border-2 border-surface-container-high bg-surface-bright text-on-surface-variant font-label-lg text-label-lg transition-all duration-200 peer-checked:bg-secondary-container peer-checked:border-secondary peer-checked:text-secondary hover:bg-surface-container-low">
+                                    6th
+                                </div>
+</label>
+<label class="cursor-pointer">
+<input class="peer sr-only" name="grade" type="radio" value="7"/>
+<div class="px-4 py-2 rounded-full border-2 border-surface-container-high bg-surface-bright text-on-surface-variant font-label-lg text-label-lg transition-all duration-200 peer-checked:bg-secondary-container peer-checked:border-secondary peer-checked:text-secondary hover:bg-surface-container-low">
+                                    7th
+                                </div>
+</label>
+<label class="cursor-pointer">
+<input checked="" class="peer sr-only" name="grade" type="radio" value="8"/>
+<div class="px-4 py-2 rounded-full border-2 border-surface-container-high bg-surface-bright text-on-surface-variant font-label-lg text-label-lg transition-all duration-200 peer-checked:bg-secondary-container peer-checked:border-secondary peer-checked:text-secondary hover:bg-surface-container-low">
+                                    8th
+                                </div>
+</label>
+<label class="cursor-pointer">
+<input class="peer sr-only" name="grade" type="radio" value="9"/>
+<div class="px-4 py-2 rounded-full border-2 border-surface-container-high bg-surface-bright text-on-surface-variant font-label-lg text-label-lg transition-all duration-200 peer-checked:bg-secondary-container peer-checked:border-secondary peer-checked:text-secondary hover:bg-surface-container-low">
+                                    9th
+                                </div>
+</label>
+<label class="cursor-pointer">
+<input class="peer sr-only" name="grade" type="radio" value="10"/>
+<div class="px-4 py-2 rounded-full border-2 border-surface-container-high bg-surface-bright text-on-surface-variant font-label-lg text-label-lg transition-all duration-200 peer-checked:bg-secondary-container peer-checked:border-secondary peer-checked:text-secondary hover:bg-surface-container-low">
+                                    10th
+                                </div>
+</label>
+</div>
+</div>
+<!-- Password -->
+<div class="flex flex-col gap-inline-gap">
+<label class="font-label-lg text-label-lg text-on-surface" for="password">Password</label>
+<div class="relative">
+<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline">lock</span>
+</div>
+<input class="w-full pl-12 pr-12 py-input-py rounded-input border-2 border-surface-container-high bg-surface-bright focus:bg-surface-container-lowest focus:border-primary/40 focus:ring-0 transition-colors duration-200 font-body-md text-body-md text-on-surface placeholder:text-outline-variant outline-none" id="password" name="password" placeholder="Create a strong password" type="password"/>
+<button class="absolute inset-y-0 right-0 pr-4 flex items-center text-outline hover:text-primary transition-colors" onclick="togglePassword('password', 'visibility_icon_1')" type="button">
+<span class="material-symbols-outlined" id="visibility_icon_1">visibility</span>
+</button>
+</div>
+</div>
+<!-- Confirm Password -->
+<div class="flex flex-col gap-inline-gap">
+<label class="font-label-lg text-label-lg text-on-surface" for="confirm_password">Confirm Password</label>
+<div class="relative">
+<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline">lock</span>
+</div>
+<input class="w-full pl-12 pr-12 py-input-py rounded-input border-2 border-surface-container-high bg-surface-bright focus:bg-surface-container-lowest focus:border-primary/40 focus:ring-0 transition-colors duration-200 font-body-md text-body-md text-on-surface placeholder:text-outline-variant outline-none" id="confirm_password" name="confirm_password" placeholder="Repeat your password" type="password"/>
+<button class="absolute inset-y-0 right-0 pr-4 flex items-center text-outline hover:text-primary transition-colors" onclick="togglePassword('confirm_password', 'visibility_icon_2')" type="button">
+<span class="material-symbols-outlined" id="visibility_icon_2">visibility</span>
+</button>
+</div>
+</div>
+<!-- Submit Button -->
+<button class="mt-4 w-full bg-primary text-on-primary py-4 px-6 rounded-full font-label-lg text-label-lg shadow-lg hover:bg-primary-container active:scale-[0.98] transition-all duration-200 flex justify-center items-center gap-2 group" type="submit">
+                        Join the Sanctuary
+                        <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform duration-200">rocket_launch</span>
+</button>
+</form>
+</div>
+</section>
+</main>
+<!-- Footer Component from JSON -->
+<footer class="bg-transparent border-t border-surface-container-high w-full py-8 mt-auto fade-in-up stagger-3">
+<div class="flex flex-col md:flex-row justify-between items-center px-container-padding-desktop max-w-7xl mx-auto gap-4 md:gap-0">
+<div class="text-primary font-label-sm text-label-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">menu_book</span>
+                © 2024 Lumina Learn. All rights reserved.
+            </div>
+<nav class="flex gap-6">
+<a class="font-label-sm text-label-sm text-outline-teal opacity-80 hover:opacity-100 hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="font-label-sm text-label-sm text-outline-teal opacity-80 hover:opacity-100 hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="font-label-sm text-label-sm text-outline-teal opacity-80 hover:opacity-100 hover:text-primary transition-colors" href="#">Help Center</a>
+</nav>
+</div>
+</footer>
+<script>
+        function togglePassword(inputId, iconId) {
+                const input = document.getElementById(inputId);
+                const icon = document.getElementById(iconId);
+                if (input.type === 'password') {
+                input.type = 'text';
+                icon.textContent = 'visibility_off';
+                } else {
+                input.type = 'password';
+                icon.textContent = 'visibility';
+                }
+        }
+
+        
+
+
+        document.getElementById("registrationForm").addEventListener("submit", async function(event) {
+                event.preventDefault();
+
+                const username = document.getElementById("username").value.trim();
+                const studentNumber = document.getElementById("student-number").value.trim();
+                const grade = document.querySelector('input[name="grade"]:checked')?.value;
+                const password = document.getElementById("password").value;
+                const confirmPassword = document.getElementById("confirm_password").value;
+
+                if (!username || !studentNumber || !grade || !password || !confirmPassword) {
+                alert("Please complete all fields.");
+                return;
+                }
+
+                if (password !== confirmPassword) {
+                alert("Passwords do not match.");
+                return;
+                }
+
+                try {
+                const response = await fetch("/api/register", {
+                        method: "POST",
+                        headers: {
+                        "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                        name: username,
+                        student_number: studentNumber,
+                        grade: Number(grade),
+                        password: password
+                        })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                        alert(data.error || "Registration failed.");
+                        return;
+                }
+
+                alert("Account created successfully!");
+
+                window.location.href = "/login";
+
+                } catch (error) {
+                console.error(error);
+                alert("Unable to connect to the server.");
+                }
+        });
+    </script>
+</body></html>

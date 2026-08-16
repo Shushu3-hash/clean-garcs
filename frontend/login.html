@@ -149,7 +149,7 @@
 <div class="mt-10 text-center">
 <p class="text-on-surface-variant font-medium text-sm">
                         New to Lumina? 
-                        <a class="text-primary font-bold hover:underline ml-1" href="#">Create an explorer account</a>
+                        <a class="text-primary font-bold hover:underline ml-1" href="/register">Create an explorer account</a>
 </p>
 </div>
 </div>
@@ -209,42 +209,36 @@
 
         let payload = await response.json();
 
-        // Student doesn't exist → automatically register
+        // if student does not exist throw login fail error
         if (response.status === 404) {
-            const fallbackName = email.split('@')[0] || 'Student';
-
-            const registerResponse = await fetch('/api/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name: fallbackName,
-                    grade: 5,
-                    email,
-                    password
-                })
-            });
-
-            const registerPayload = await registerResponse.json();
-
-            if (!registerResponse.ok) {
-                throw new Error(
-                    registerPayload.error || 'Unable to create your account'
-                );
-            }
-
-            // Log in again after successful registration
-            response = await fetch('/api/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
-            });
-
-            payload = await response.json();
+          throw new Error('Student not found. Please check your credentials or create an account.');
         }
 
         if (!response.ok) {
-            throw new Error(payload.error || 'Login failed');
+          throw new Error(payload.error || 'Login failed');
         }
+
+        localStorage.setItem('garcs_student', JSON.stringify(payload));
+        window.location.href = '/dashboard';
+
+          const registerPayload = await registerResponse.json();
+
+          if (!registerResponse.ok) {
+              throw new Error(
+                  registerPayload.error || 'Unable to create your account'
+              );
+          }
+
+          // Log in again after successful registration
+          response = await fetch('/api/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, password })
+          });
+
+          payload = await response.json();
+        
+
 
         localStorage.setItem('garcs_student', JSON.stringify(payload));
         window.location.href = '/dashboard';
