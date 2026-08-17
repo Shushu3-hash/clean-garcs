@@ -254,7 +254,7 @@
 <section class="lg:w-1/2 flex justify-center lg:justify-end items-center w-full">
 <div class="bg-surface-container-lowest w-full max-w-md rounded-card editorial-shadow p-8 fade-in-up stagger-2">
 <h2 class="font-headline-md text-headline-md text-primary mb-8 text-center">Create Account</h2>
-<form id="registrationForm" class="flex flex-col gap-stack-gap"></form>
+<form id="registrationForm" class="flex flex-col gap-stack-gap">
 <!-- Username -->
 <div class="flex flex-col gap-inline-gap">
 <label class="font-label-lg text-label-lg text-on-surface" for="username">Username</label>
@@ -273,6 +273,16 @@
 <span class="material-symbols-outlined text-outline">person</span>
 </div>
 <input class="w-full pl-12 pr-4 py-input-py rounded-input border-2 border-surface-container-high bg-surface-bright focus:bg-surface-container-lowest focus:border-primary/40 focus:ring-0 transition-colors duration-200 font-body-md text-body-md text-on-surface placeholder:text-outline-variant outline-none" id="student-number" name="student-number" placeholder="Enter your student number" type="text"/>
+</div>
+</div>
+<!-- Email -->
+<div class="flex flex-col gap-inline-gap">
+<label class="font-label-lg text-label-lg text-on-surface" for="email">Email</label>
+<div class="relative">
+<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-outline">email</span>
+</div>
+<input class="w-full pl-12 pr-4 py-input-py rounded-input border-2 border-surface-container-high bg-surface-bright focus:bg-surface-container-lowest focus:border-primary/40 focus:ring-0 transition-colors duration-200 font-body-md text-body-md text-on-surface placeholder:text-outline-variant outline-none" id="email" name="email" placeholder="Enter your email" type="email"/>
 </div>
 </div>
 <!-- Grade Level Selector (Chips) -->
@@ -379,7 +389,6 @@
                 }
         }
 
-        
 
 
         document.getElementById("registrationForm").addEventListener("submit", async function(event) {
@@ -388,10 +397,11 @@
                 const username = document.getElementById("username").value.trim();
                 const studentNumber = document.getElementById("student-number").value.trim();
                 const grade = document.querySelector('input[name="grade"]:checked')?.value;
+                const email = document.getElementById("email").value.trim(); 
                 const password = document.getElementById("password").value;
                 const confirmPassword = document.getElementById("confirm_password").value;
 
-                if (!username || !studentNumber || !grade || !password || !confirmPassword) {
+                if (!username || !email || !grade || !password || !confirmPassword) {
                 alert("Please complete all fields.");
                 return;
                 }
@@ -408,8 +418,9 @@
                         "Content-Type": "application/json"
                         },
                         body: JSON.stringify({
-                        name: username,
-                        student_number: studentNumber,
+                        username: username,
+                        email: email,
+                        student_number: studentNumber, 
                         grade: Number(grade),
                         password: password
                         })
