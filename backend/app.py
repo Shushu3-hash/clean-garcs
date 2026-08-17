@@ -62,6 +62,9 @@ DESIGN DECISIONS WORTH KNOWING ABOUT
 
 import csv
 import io
+# from operator import or_
+from sqlalchemy import or_
+
 import random
 from datetime import datetime
 
@@ -101,10 +104,10 @@ app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DATABASE_FILE}"
 db = SQLAlchemy(app)
 from pathlib import Path
 
-print("=" * 60)
-print("INSTANCE:", app.instance_path)
-print("DATABASE:", Path(app.instance_path) / "database.db")
-print("=" * 60)
+# print("=" * 60)
+# print("INSTANCE:", app.instance_path)
+# print("DATABASE:", Path(app.instance_path) / "database.db")
+# print("=" * 60)
 
 CORS(app)
 
@@ -114,9 +117,10 @@ CORS(app)
 # =====================================
 class Student(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100))
-    grade = db.Column(db.Integer)
+    username = db.Column(db.String(100))
+    student_number = db.Column(db.String(50), unique=True)
     email = db.Column(db.String(120), unique=True)
+    grade = db.Column(db.Integer)
     password_hash = db.Column(db.String(200))
 
 
@@ -159,8 +163,13 @@ class StudentSkillState(db.Model):
     points = db.Column(db.Integer, default=0)
 
 
+# with app.app_context():
+#     db.create_all()
 with app.app_context():
     db.create_all()
+    print("DATABASE URI:", app.config["SQLALCHEMY_DATABASE_URI"])
+    print("DATABASE ENGINE URL:", db.engine.url)
+    print("DATABASE FILE:", db.engine.url.database)
 
 
 # =====================================
@@ -210,49 +219,75 @@ def register_page():
 def register():
     data = request.json or {}
 
-    required = ("name", "grade", "email", "password")
-    if not all(data.get(f) for f in required):
-        return jsonify({"error": f"Missing one of: {', '.join(required)}"}), 400
+    print("=== REGISTER DEBUG ===")
+    print("DB URL:", db.engine.url)
+    print("DB FILE:", db.engine.url.database)
+    print("INSTANCE:", app.instance_path)
+    print("REQUEST DATA:", data)
 
-    if Student.query.filter_by(email=data["email"]).first():
-        return jsonify({"error": "email already registered"}), 409
+    username = data.get("username", "").strip()
+    student_number = data.get("student_number", "").strip()
+    email = data.get("email", "").strip()
+    grade = data.get("grade")
+    password = data.get("password", "")
+
+    if not username or not student_number or grade is None or not password:
+        return jsonify({
+            "error": "Missing required registration fields"
+        }), 400
+
+    if Student.query.filter_by(username=username).first():
+        return jsonify({"error": "username_already_exists"}), 409
+
+    if Student.query.filter_by(student_number=student_number).first():
+        return jsonify({"error": "student_number_already_exists"}), 409
+
+    if Student.query.filter_by(email=email).first():
+        return jsonify({"error": "email_already_exists"}), 409
 
     student = Student(
-        name=data['name'],
-        grade=data['grade'],
-        email=data['email'],
-        password_hash=generate_password_hash(data['password']),
+        username=username,
+        student_number=student_number,
+        email=email or None,
+        grade=int(grade),
+        password_hash=generate_password_hash(password)
     )
+
     db.session.add(student)
-    db.session.commit()
 
-    for skill in SKILLS:
-        db.session.add(StudentSkillState(student_id=student.id, skill_tag=skill))
-    db.session.commit()
+    print("ABOUT TO COMMIT")
+    print("DB URL:", db.engine.url)
+    print("DB FILE:", db.engine.url.database)
 
-    return jsonify({"student_id": student.id})
+    try:
+        db.session.commit()
+        print("COMMIT SUCCESS")
+    except Exception as e:
+        print("COMMIT ERROR:", repr(e))
+        db.session.rollback()
+        raise
+
+    return jsonify({
+        "message": "registration_successful",
+        "student_id": student.id
+    }), 201
 
 
-# @app.route('/api/login', methods=['POST'])
-# def login():
-#     data = request.json or {}
-#     email = data.get("email") or data.get("identifier")
-#     password = data.get("password", "")
-
-#     student = Student.query.filter_by(email=email).first()
-#     if not student or not student.password_hash or not check_password_hash(student.password_hash, password):
-#         return jsonify({"error": "invalid credentials"}), 401
-
-#     return jsonify({"student_id": student.id, "name": student.name, "grade": student.grade})
 
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.json or {}
 
-    email = data.get("email") or data.get("identifier")
+    identifier = data.get("email") or data.get("username") or data.get("student_number")
     password = data.get("password", "")
 
-    student = Student.query.filter_by(email=email).first()
+    student = Student.query.filter(
+        or_(
+            Student.email == identifier,
+            Student.student_number == identifier,
+            Student.username == identifier
+        )
+    ).first()
 
     if not student:
         return jsonify({"error": "student_not_found"}), 404
@@ -265,7 +300,7 @@ def login():
 
     return jsonify({
         "student_id": student.id,
-        "name": student.name,
+        "name": student.username,
         "grade": student.grade
     })
 
@@ -523,7 +558,7 @@ def progress_api(student_id):
 
     return jsonify({
         "student_id": student_id,
-        "name": student.name,
+        "name": student.username,
         "grade": student.grade,
         "skills": skills,
         "total_points": total_points,
