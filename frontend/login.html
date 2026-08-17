@@ -118,8 +118,8 @@
 <div class="relative">
 <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline text-xl" data-icon="lock">lock</span>
 <input class="w-full bg-surface-container-lowest border-2 border-surface-container-high rounded-lg py-4 pl-12 pr-4 focus:ring-0 focus:border-primary/40 focus:bg-surface-bright transition-colors placeholder:text-outline-variant/60" id="password" placeholder="••••••••" type="password"/>
-<button class="absolute right-4 top-1/2 -translate-y-1/2 text-outline-variant hover:text-primary transition-colors" type="button">
-<span class="material-symbols-outlined" data-icon="visibility">visibility</span>
+<button class="absolute inset-y-0 right-0 pr-4 flex items-center text-outline hover:text-primary transition-colors" onclick="togglePassword('password', 'visibility_icon_1')" type="button">
+<span class="material-symbols-outlined" id="visibility_icon_1">visibility</span>
 </button>
 </div>
 </div>
@@ -166,6 +166,18 @@
 <span class="material-symbols-outlined text-[120px] text-primary select-none" data-icon="auto_awesome">auto_awesome</span>
 </div>
 <script>
+  function togglePassword(inputId, iconId) {
+                const input = document.getElementById(inputId);
+                const icon = document.getElementById(iconId);
+                if (input.type === 'password') {
+                input.type = 'text';
+                icon.textContent = 'visibility_off';
+                } else {
+                input.type = 'password';
+                icon.textContent = 'visibility';
+                }
+        }
+        
   const form = document.querySelector('form');
   const identifierInput = document.getElementById('identifier');
   const passwordInput = document.getElementById('password');
