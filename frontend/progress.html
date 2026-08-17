@@ -52,13 +52,40 @@
 <h1 class="font-lexend text-xl font-bold tracking-tight text-[#006B5E] dark:text-[#99ecdb]">Progress</h1>
 </div>
 <div class="flex items-center gap-3">
-<div class="flex flex-col items-end hidden md:flex">
+<!-- <div class="flex flex-col items-end hidden md:flex">
 <span id="studentName" class="font-lexend font-bold text-sm text-[#006B5E]">Student</span>
 <span class="text-[10px] uppercase tracking-widest opacity-70">Mastery dashboard</span>
-</div>
-<div class="w-10 h-10 rounded-full bg-surface-container-highest overflow-hidden border-2 border-primary/20">
+</div> -->
+<!-- <div class="w-10 h-10 rounded-full bg-surface-container-highest overflow-hidden border-2 border-primary/20">
 <img alt="User Profile Avatar" class="w-full h-full object-cover" data-alt="close-up portrait of a cheerful young teenager with glasses and curly hair, soft natural lighting, minimalist background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuASHEDoAWqDXo3LE5epN_nOTQzxS-XsiIezBYgNOd_EWbmfvv0Ma7CcPggOt8ifKFHzV1FvzPfXkBahnLojAD7Uq3hG0v7_MulILzJyhVTyQ6mlLALbWKVMGFfUOSl-dDBtLCDRlvpuUzj64vIkqMbLUD2JdZuODCN9cfDpaCZ5gSctCcuXbBWVF7BH5zHZACcqhV3oyQjvA-5aswNsyyGpY7PUwOMl7xB0LUhcxaxN8aRKnxc6jd0BE_vehn3fEFUvCeFvPBHqvWlJ">
+</div> -->
+<div class="relative inline-block">
+  <!-- Settings button -->
+  <button
+    id="settingsBtn"
+    class="w-10 h-10 flex items-center justify-center text-[#006B5E] dark:text-teal-400 hover:scale-95 transition-transform duration-200"
+    type="button"
+  >
+    <span class="material-symbols-outlined" data-icon="settings">settings</span>
+  </button>
+
+  <!-- Dropdown (hidden by default) -->
+  <div
+    id="settingsDropdown"
+    class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg z-50"
+  >
+    <!-- Logout button inside dropdown -->
+    <button
+      onclick="logout()"
+      class="w-full flex items-center gap-2 px-4 py-2 rounded-full text-red-700 hover:bg-red-50"
+      type="button"
+    >
+      <span class="material-symbols-outlined">logout</span>
+      <span>Log out</span>
+    </button>
+  </div>
 </div>
+
 </div>
 </header>
 <main class="max-w-5xl mx-auto px-6 pt-8 space-y-10">
@@ -140,9 +167,36 @@
 
   if (studentName && student.name) {
     studentName.textContent = student.name;
+    }
+
+
+  const settingsBtn = document.getElementById('settingsBtn');
+  const dropdown = document.getElementById('settingsDropdown');
+
+  settingsBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dropdown.classList.toggle('hidden');
+  });
+
+  // Close when clicking anywhere else
+  document.addEventListener('click', () => {
+    dropdown.classList.add('hidden');
+  });
+
+  // (Optional) Close after clicking an item
+  dropdown.addEventListener('click', () => {
+    dropdown.classList.add('hidden');
+  });
+
+  function logout() {
+    localStorage.removeItem('garcs_student');
+    window.location.href = '/login';
   }
+  
 
   async function loadProgress() {
+    
+
     if (!student.student_id) {
       window.location.href = '/login';
       return;
