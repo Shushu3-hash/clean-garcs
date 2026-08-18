@@ -1,4 +1,4 @@
-#!/home/trisha/Documents/clean-garcs/env310/bin/python3.10
+#!/mnt/wd-500gb/Documents/clean-garcs/env310/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys
