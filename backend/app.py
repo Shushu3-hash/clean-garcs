@@ -144,6 +144,11 @@ class Question(db.Model):
 class Response(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     student_id = db.Column(db.Integer, db.ForeignKey('student.id'))
+    session_id = db.Column(
+        db.Integer,
+        db.ForeignKey('assessment_session.id'),
+        nullable=True
+    )
     question_id = db.Column(db.Integer, db.ForeignKey('question.id'))
     skill_tag = db.Column(db.String(20))
     difficulty = db.Column(db.String(10))
@@ -161,6 +166,20 @@ class StudentSkillState(db.Model):
     skill_tag = db.Column(db.String(20))
     mastery = db.Column(db.Float, default=0.50)
     points = db.Column(db.Integer, default=0)
+
+class AssessmentSession(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    student_id = db.Column(
+        db.Integer,
+        db.ForeignKey('student.id'),
+        nullable=False
+    )
+    started_at = db.Column(
+        db.DateTime,
+        default=datetime.utcnow
+    )
+    completed_at = db.Column(db.DateTime, nullable=True)
+    question_count = db.Column(db.Integer, default=0)
 
 
 # with app.app_context():
@@ -316,13 +335,38 @@ def session_start():
     if not student:
         return jsonify({"error": "student not found"}), 404
 
-    existing = {s.skill_tag for s in StudentSkillState.query.filter_by(student_id=student_id).all()}
+    # Make sure all skill states exist.
+    existing = {
+        s.skill_tag
+        for s in StudentSkillState.query.filter_by(
+            student_id=student_id
+        ).all()
+    }
+
     for skill in SKILLS:
         if skill not in existing:
-            db.session.add(StudentSkillState(student_id=student_id, skill_tag=skill))
+            db.session.add(
+                StudentSkillState(
+                    student_id=student_id,
+                    skill_tag=skill
+                )
+            )
+
+    # Create a NEW assessment session.
+    assessment = AssessmentSession(
+        student_id=student_id,
+        question_count=0
+    )
+
+    db.session.add(assessment)
     db.session.commit()
 
-    return jsonify({"student_id": int(student_id), "ready": True})
+    return jsonify({
+        "student_id": int(student_id),
+        "session_id": assessment.id,
+        "question_limit": 5,
+        "ready": True
+    })
 
 
 # =====================================
@@ -396,66 +440,142 @@ def assessment_passages():
 @app.route('/api/question/next')
 def question_next():
     student_id = request.args.get("student_id", type=int)
+    session_id = request.args.get("session_id", type=int)
+
+    # Validate student
     if not student_id or not Student.query.get(student_id):
         return jsonify({"error": "valid student_id required"}), 400
 
+    # Validate session
+    if not session_id:
+        return jsonify({"error": "valid session_id required"}), 400
+
+    assessment = AssessmentSession.query.filter_by(
+        id=session_id,
+        student_id=student_id
+    ).first()
+
+    if not assessment:
+        return jsonify({"error": "assessment session not found"}), 404
+
+    # HARD LIMIT: 5 questions per assessment
+    if assessment.question_count >= 5:
+        if not assessment.completed_at:
+            assessment.completed_at = datetime.utcnow()
+            db.session.commit()
+
+        return jsonify({
+            "done": True,
+            "message": "Assessment complete. You answered 5 questions.",
+            "question_count": assessment.question_count,
+            "question_limit": 5
+        })
+
+    # Load current mastery states
     states = _load_states(student_id)
+
     if not states:
-        return jsonify({"error": "skill states not initialized — call /api/session/start first"}), 400
+        return jsonify({
+            "error": "skill states not initialized — call /api/session/start first"
+        }), 400
 
-    answered_ids = [r.question_id for r in Response.query.filter_by(student_id=student_id).all()]
+    # IMPORTANT:
+    # Only exclude questions answered during THIS assessment.
+    answered_ids = [
+        r.question_id
+        for r in Response.query.filter_by(
+            student_id=student_id,
+            session_id=session_id
+        ).all()
+    ]
 
-    question, skill_tag, difficulty = pick_next_question(states, _fetch_candidates, answered_ids)
+    question, skill_tag, difficulty = pick_next_question(
+        states,
+        _fetch_candidates,
+        answered_ids
+    )
 
     print("Questions in DB:", Question.query.count())
 
-    print("literal-medium:",
-        len(_fetch_candidates("literal", "medium")))
+    print(
+        "literal-medium:",
+        len(_fetch_candidates("literal", "medium"))
+    )
 
-    print("literal-easy:",
-        len(_fetch_candidates("literal", "easy")))
+    print(
+        "literal-easy:",
+        len(_fetch_candidates("literal", "easy"))
+    )
 
-    print("inferential-medium:",
-        len(_fetch_candidates("inferential", "medium")))
+    print(
+        "inferential-medium:",
+        len(_fetch_candidates("inferential", "medium"))
+    )
 
-    print("critical-medium:",
-        len(_fetch_candidates("critical", "medium")))
+    print(
+        "critical-medium:",
+        len(_fetch_candidates("critical", "medium"))
+    )
 
     print("States:")
     for s in states.values():
         print(s.skill_tag, s.mastery)
 
-    print("Answered:", answered_ids)
+    print("Answered this session:", answered_ids)
 
     print("Chosen skill:", skill_tag)
     print("Chosen difficulty:", difficulty)
     print("Question:", question)
 
-    # Fallback chain if the exact (skill, difficulty) pool is empty: relax
-    # difficulty toward "medium" first, then fall back to any unanswered
-    # question at all. This matters once real usage outpaces a small seed
-    # bank, and gives you a concrete answer if a panelist asks "what
-    # happens when the question pool runs dry."
+    # -------------------------------------------------
+    # FALLBACK 1: relax difficulty
+    # -------------------------------------------------
     if question is None:
         tried = {difficulty}
         relaxed = relax_difficulty(difficulty)
-        while question is None and relaxed and relaxed not in tried:
+
+        while (
+            question is None
+            and relaxed
+            and relaxed not in tried
+        ):
             tried.add(relaxed)
-            candidates = [q for q in _fetch_candidates(skill_tag, relaxed) if q.id not in set(answered_ids)]
+
+            candidates = [
+                q
+                for q in _fetch_candidates(skill_tag, relaxed)
+                if q.id not in set(answered_ids)
+            ]
+
             if candidates:
                 question = random.choice(candidates)
                 difficulty = relaxed
             else:
                 relaxed = relax_difficulty(relaxed)
 
+    # -------------------------------------------------
+    # FALLBACK 2: any unanswered question
+    # -------------------------------------------------
     if question is None:
-        remaining = Question.query.filter(~Question.id.in_(answered_ids or [-1])).all()
+        remaining = Question.query.filter(
+            ~Question.id.in_(answered_ids or [-1])
+        ).all()
+
         if remaining:
             question = random.choice(remaining)
-            skill_tag, difficulty = question.skill_tag, question.difficulty
+            skill_tag = question.skill_tag
+            difficulty = question.difficulty
 
+    # -------------------------------------------------
+    # No question available
+    # -------------------------------------------------
     if question is None:
-        return jsonify({"done": True, "message": "No unanswered questions remain in the bank."})
+        return jsonify({
+            "done": True,
+            "message": "No unanswered questions remain in the bank.",
+            "question_count": assessment.question_count,
+            "question_limit": 5
+        })
 
     passage = Passage.query.get(question.passage_id)
 
@@ -465,12 +585,15 @@ def question_next():
         "choices": question.choices,
         "skill_tag": skill_tag,
         "difficulty": difficulty,
+        "question_number": assessment.question_count + 1,
+        "question_limit": 5,
         "passage": {
             "id": passage.id,
             "title": passage.title,
             "body": passage.body,
         } if passage else None,
     })
+   
 
 
 # =====================================
@@ -480,10 +603,26 @@ def question_next():
 def answer():
     data = request.json or {}
     student_id = data.get("student_id")
+    session_id = data.get("session_id")
     question_id = data.get("question_id")
     chosen_index = data.get("chosen_index")
     response_time_sec = data.get("response_time_sec", 0.0)
     reread_count = data.get("reread_count", 0)
+
+    assessment = AssessmentSession.query.filter_by(
+    id=session_id,
+    student_id=student_id
+    ).first()
+
+    if not assessment:
+        return jsonify({
+            "error": "assessment session not found"
+        }), 404
+
+    if assessment.question_count >= 5:
+        return jsonify({
+            "error": "assessment already completed"
+        }), 400
 
     question = Question.query.get(question_id)
     if not question:
@@ -509,6 +648,7 @@ def answer():
     skill_row.points = (skill_row.points or 0) + points_earned
 
     db.session.add(Response(
+        session_id=session_id,
         student_id=student_id,
         question_id=question_id,
         skill_tag=question.skill_tag,
@@ -519,6 +659,13 @@ def answer():
         mastery_before=mastery_before,
         mastery_after=mastery_after,
     ))
+
+    assessment.question_count += 1
+
+    if assessment.question_count >= 5:
+        assessment.completed_at = datetime.utcnow()
+
+
     db.session.commit()
 
     return jsonify({

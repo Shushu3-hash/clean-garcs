@@ -439,14 +439,6 @@ function renderResults() {
 // ============================================================
 // EVENT HANDLERS
 // ============================================================
-// function selectGrade(g) {
-//   state.grade = g;
-//   document.querySelectorAll('.grade-chip').forEach((chip,i) => {
-//     const gs=[3,4,5,6,7,8,9,10,11,12];
-//     chip.classList.toggle('selected', gs[i]===g);
-//   });
-// }
-
 async function loadNextQuestion() {
   const savedStudent = localStorage.getItem('garcs_student');
   let student = null;
@@ -468,19 +460,34 @@ async function loadNextQuestion() {
   state.isLoading = true;
   app.innerHTML = `<div class="fade-in-up" style="text-align:center;padding:2rem 0;">${headerHTML()}<p style="color:var(--on-surface-variant);">Loading your next adaptive question…</p></div>`;
 
+  let sessionRes;
+  let sessionPayload;
+
   try {
-    const sessionRes = await fetch('/api/session/start', {
+    if (!state.sessionId) {
+      const sessionRes = await fetch('/api/session/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ student_id: studentId })
     });
 
-    if (!sessionRes.ok) {
-      const payload = await sessionRes.json().catch(() => ({}));
-      throw new Error(payload.error || 'Unable to initialize your skill states.');
+      if (!sessionRes.ok) {
+        const payload = await sessionRes.json().catch(() => ({}));
+        throw new Error(
+          payload.error || 'Unable to start assessment.'
+        );
+      }
+
+      sessionPayload = await sessionRes.json();
+
+      state.sessionId = sessionPayload.session_id;
+      state.questionLimit = sessionPayload.question_limit || 5;
     }
 
-    const questionRes = await fetch(`/api/question/next?student_id=${studentId}`);
+    const questionRes = await fetch(
+    `/api/question/next?student_id=${studentId}&session_id=${state.sessionId}`
+    );
+
     if (!questionRes.ok) {
       const payload = await questionRes.json().catch(() => ({}));
       throw new Error(payload.error || 'Unable to load the next question.');
@@ -525,7 +532,7 @@ async function loadNextQuestion() {
     state.currentQ = 0;
     state.readingStart = Date.now();
     state.screen = 'questions';
-    return true;
+    return true; 
   } catch (err) {
     console.error(err);
     alert(err.message || 'Could not load the next question.');
@@ -564,10 +571,19 @@ async function nextQuestion() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         student_id: state.userId,
+        session_id: state.sessionId,
         question_id: state.currentQuestion?.id,
         chosen_index: state.answers[0],
-        response_time_sec: Math.max(0, Math.round((Date.now() - (state.readingStart || Date.now())) / 1000)),
-        reread_count: 0
+        response_time_sec: Math.max(
+            0,
+            Math.round(
+                (Date.now() - (state.readingStart || Date.now())) / 1000
+            )
+        ),
+        reread_count: 0,
+        sessionId: null,
+        questionLimit: 5,
+        answeredCount: 0,
       })
     });
 
