@@ -703,6 +703,23 @@ def progress_api(student_id):
         })
         total_points += row.points or 0
 
+    history_rows = (
+        Response.query
+        .filter_by(student_id=student_id)
+        .order_by(Response.timestamp.asc(), Response.id.asc())
+        .all()
+    )
+
+    history = [
+        {
+            "timestamp": row.timestamp.isoformat(),
+            "skill_tag": row.skill_tag,
+            "mastery_before": round(row.mastery_before, 3),
+            "mastery_after": round(row.mastery_after, 3),
+        }
+        for row in history_rows
+    ]
+
     return jsonify({
         "student_id": student_id,
         "name": student.username,
@@ -710,6 +727,7 @@ def progress_api(student_id):
         "skills": skills,
         "total_points": total_points,
         "badges": [],  # Phase 5 populates this from a real badge-rule table
+        "history": history,
     })
 
 

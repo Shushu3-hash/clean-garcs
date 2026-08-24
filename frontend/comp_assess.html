@@ -201,7 +201,9 @@ const state = {
   prediction: null,
   isLoading: false,
   answeredCount: 0,
-  completedMessage: null
+  completedMessage: null,
+  sessionId: null,
+  questionLimit: 5
 };
 
 // ============================================================
@@ -409,7 +411,7 @@ function renderResults() {
       <div style="position:absolute;left:-1rem;bottom:-2rem;width:5rem;height:5rem;background:white;opacity:0.05;border-radius:50%;"></div>
       <div style="background:rgba(255,255,255,0.15);display:inline-block;padding:0.375rem 1.125rem;border-radius:9999px;font-size:0.8125rem;font-weight:700;color:white;margin-bottom:0.875rem;">${summary.label}</div>
       <p style="color:rgba(255,255,255,0.85);font-size:0.875rem;margin-bottom:0.25rem;">${summary.message}</p>
-      <p style="color:rgba(255,255,255,0.6);font-size:0.75rem;">Answered ${state.answeredCount} question${state.answeredCount === 1 ? '' : 's'}</p>
+      <p style="color:rgba(255,255,255,0.6);font-size:0.75rem;">Answered ${state.answeredCount} of ${state.questionLimit} questions</p>
       ${summary.lexile ? `<p style="color:rgba(255,255,255,0.6);font-size:0.75rem;">${summary.gradeEq} · ${summary.range}</p>` : ''}
     </div>
 
@@ -482,6 +484,7 @@ async function loadNextQuestion() {
 
       state.sessionId = sessionPayload.session_id;
       state.questionLimit = sessionPayload.question_limit || 5;
+      state.answeredCount = 0;
     }
 
     const questionRes = await fetch(
@@ -581,9 +584,9 @@ async function nextQuestion() {
             )
         ),
         reread_count: 0,
-        sessionId: null,
-        questionLimit: 5,
-        answeredCount: 0,
+        // sessionId: null,
+        // questionLimit: 5,
+        // answeredCount: 0,
       })
     });
 
@@ -593,6 +596,15 @@ async function nextQuestion() {
     }
 
     state.answeredCount += 1;
+
+    if (state.answeredCount >= state.questionLimit) {
+      state.screen = 'results';
+      state.completedMessage =
+        'Assessment complete. You answered 5 questions.';
+      render();
+      return;
+    }
+
     await loadNextQuestion();
     if (state.screen === 'questions') {
       render();
@@ -608,8 +620,19 @@ function prevQuestion() {
 }
 
 function resetApp() {
-  state.screen='welcome'; state.answers=[]; state.currentQ=0;
-  state.prediction=null; state.passage=null; state.answeredCount=0; state.completedMessage=null; render();
+  state.screen = 'welcome';
+  state.answers = [];
+  state.currentQ = 0;
+  state.prediction = null;
+  state.passage = null;
+  state.answeredCount = 0;
+  state.completedMessage = null;
+
+  // IMPORTANT: force the next assessment to create a new session
+  state.sessionId = null;
+  state.questionLimit = 5;
+
+  render();
 }
 
 function goToLibrary() {
