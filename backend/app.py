@@ -204,31 +204,31 @@ BAND_RANK = {"Weak": 0, "Developing": 1, "Strong": 2}
 # =====================================
 @app.route("/")
 def home():
-    return send_file('../frontend/login.html')
+    return send_file(BASE_DIR.parent / "frontend" / "login.html")
 
 
 @app.route("/login")
 def login_page():
-    return send_file('../frontend/login.html')
+    return send_file(BASE_DIR.parent / "frontend" / "login.html")
 
 
 @app.route("/dashboard")
 def dashboard_page():
-    return send_file('../frontend/dashboard.html')
+    return send_file(BASE_DIR.parent / "frontend" / "dashboard.html")
 
 
 @app.route("/library")
 def library():
-    return send_file('../frontend/library.html')
+    return send_file(BASE_DIR.parent / "frontend" / "library.html")
 
 
 @app.route("/progress")
 def progress_page():
-    return send_file('../frontend/progress.html')
+    return send_file(BASE_DIR.parent / "frontend" / "progress.html")
 
 @app.route("/register")
 def register_page():
-    return send_file('../frontend/registration.html')
+    return send_file(BASE_DIR.parent / "frontend" / "registration.html")
 
 
 # =====================================
